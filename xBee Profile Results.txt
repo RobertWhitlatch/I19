@@ -1,0 +1,43 @@
+Number of Trials: 8
+Number of Bytes Sent and Received: 1
+Trial 0: 709540 cycles => 8869250ns
+Trial 1: 661966 cycles => 8274575ns
+Trial 2: 695776 cycles => 8697200ns
+Trial 3: 695858 cycles => 8698225ns
+Trial 4: 696526 cycles => 8706575ns
+Trial 5: 696520 cycles => 8706500ns
+Trial 6: 696628 cycles => 8707850ns
+Trial 7: 696106 cycles => 8701325ns
+
+Number of Trials: 8
+Number of Bytes Sent and Received: 2
+Trial 0: 707070 cycles => 8838375ns
+Trial 1: 724260 cycles => 9053250ns
+Trial 2: 712092 cycles => 8901150ns
+Trial 3: 711914 cycles => 8898925ns
+Trial 4: 712584 cycles => 8907300ns
+Trial 5: 711802 cycles => 8897525ns
+Trial 6: 711792 cycles => 8897400ns
+Trial 7: 711752 cycles => 8896900ns
+
+Number of Trials: 8
+Number of Bytes Sent and Received: 3
+Trial 0: 736460 cycles => 9205750ns
+Trial 1: 764386 cycles => 9554825ns
+Trial 2: 742716 cycles => 9283950ns
+Trial 3: 765196 cycles => 9564950ns
+Trial 4: 742226 cycles => 9277825ns
+Trial 5: 765336 cycles => 9566700ns
+Trial 6: 741654 cycles => 9270675ns
+Trial 7: 742176 cycles => 9277200ns
+
+Number of Trials: 8
+Number of Bytes Sent and Received: 4
+Trial 0: 778410 cycles => 9730125ns
+Trial 1: 781862 cycles => 9773275ns
+Trial 2: 770410 cycles => 9630125ns
+Trial 3: 769710 cycles => 9621375ns
+Trial 4: 770460 cycles => 9630750ns
+Trial 5: 781980 cycles => 9774750ns
+Trial 6: 770260 cycles => 9628250ns
+Trial 7: 769678 cycles => 9620975ns

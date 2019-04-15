@@ -1,0 +1,63 @@
+The following is an outline of what to do to connect a PocketBeagle to the internet via the USB cable to a Windows 10 desktop which is connected to the Internet via hardwire Ethernet.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ethernet over USB Tether Gadget
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is to connect a PocketBeagle to the Internet through the USB connection to a Windows 10 desktop, which is connected by hardwire Ethernet to the Internet.
+
+I used 'Etcher' to load a fresh copy of the latest 'stretch' version of Debian 9.1 onto the Pocketbone.
+bone-debian-9.1-iot-armhf-2017-10-01-4gb.img
+
+Plug the PocketBeagle into an open USB port on your Windows 10 desktop
+
+The four LEDs should start blinking, and after about a minute or so, a new USB serial device should appear in Device Manager\Ports(COM&LPT), and a new Remote NDIS Compatible Device should appear in Device Manager\Network Adaptors
+
+Also, a new Ethernet interface will appear in Control Panel\Network and Internet\Network Connections.
+It will be described as "Unidentified Network", Remote NDIS Compatible Device
+
+Use Putty to connect to the new COM port
+log into the PocketBeagle
+
+now type
+sudo /sbin/route add default gw 192.168.7.1
+
+Now, on the Windows 10 desktop,
+go to and open your primary Ethernet interface:   Ethernet\Properties\Sharing\
+Check the two sharing boxes.
+Enter the name of the new NDIS Device interface into the box. [In my case it was Ethernet 2 ]
+Click 'OK' and exit the interface box
+
+Now open the Unidentified Network\NDIS Device interface\Properties\Internet Protocol Version 4\Properties
+Click 'Use the following IP address'
+Enter 192.168.7.1 as the IP address
+Enter 255.255.255.0 as the Subnet Mask
+
+Click 'Use the following DNS server addresses'
+Enter 8.8.8.8 as the Preferred DNS server.
+Click 'OK' and 'Close' to exit
+
+Now go to the PocketBeagle command line on Putty
+sudo nano /etc/resolv.conf
+down-arrow to get past the comment line
+enter 'nameserver 8.8.8.8'       [without the quotes]
+enter <return>
+enter <control-X>, then 'Y', <return> to exit    [without the quotes]
+
+The Ethernet tether gadget should be operational.
+To test, type 'ping google.com' in the command line. [without the quotes]
+It should run and see the ping replies.
+type <control-c> to abort.
+
+You should now have internet access and can 
+sudo apt-get update
+
+The two entries in the PockBeagle are not persistent, so after any reboot,
+you will have to repeat the two entries in the PocketBeagle to get the 
+internet tether gadget running again.
+
+
+There is more information here ...
+https://www.digikey.com/en/maker/blogs/how-to-connect-a-beaglebone-black-to-the-internet-using-usb/cdf66181b3a5436e9ad730e4ed4cf9ee
+
+==
