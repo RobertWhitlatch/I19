@@ -1,16 +1,5 @@
 #include "Master.h"
 
-//#define BOARD_0 0
-//#define BOARD_1 1
-//#define GROUP_0 0
-//#define GROUP_1 1
-//#define GROUP_2 2
-//#define GROUP_3 3
-//#define GROUP_4 4
-//#define GROUP_5 5
-//#define GROUP_6 6
-//#define GROUP_7 7
-
 #define BRSH(x,y) depot.group[(x)].config.brushed[(y)]
 #define SRV(x,y) depot.group[(x)].config.servo[(y)]
 #define STEP(x) depot.group[(x)].config.stepper
@@ -36,10 +25,10 @@ typedef struct Servo_Config{
 
 typedef struct Stepper_Config{
     unsigned int method;
-    unsigned int method_size;
+    unsigned int methodSize;
     unsigned int state;
-    unsigned int numSteps;
     unsigned int stepsPerSecond;
+    unsigned int stepsRemaining;
              int direction;
 }Stepper_t;
 #define STEPPER_SIZE sizeof(Stepper_t)
@@ -78,16 +67,21 @@ MotorDepot_t depot = {
     }
 };
 
-extern uint32_t SystemCoreClock;
+
+
+unsigned int CS_getMCLK(void);
+unsigned int clockHz;
 
 //>>>>>>>>>>>>>>>>General<<<<<<<<<<<<<<<<<<<//
 
 void MotorDepot_Init(void){
+    clockHz = CS_getMCLK();
     initI2C();
     initGPIO(depot.board_status);
     initPWM(depot.board_status);
     for(int i = 0; i < 8; i++){
         if(depot.group[i].status == BRUSHED){
+            enableDriver(i);
             for(int j = 0; j < 2; i++){
                 depot.group[i].config.brushed[j].direction = DIRECTION_FORWARD;
                 depot.group[i].config.brushed[j].decay = DECAY_FAST;
@@ -102,12 +96,13 @@ void MotorDepot_Init(void){
             }
         }
         if(depot.group[i].status == STEPPER){
+            enableDriver(i);
             depot.group[i].config.stepper.method = STANDARD;
-            depot.group[i].config.stepper.method_size = 8;
+            depot.group[i].config.stepper.methodSize = 4;
             depot.group[i].config.stepper.state = 0;
             depot.group[i].config.stepper.direction = DIRECTION_FORWARD;
             depot.group[i].config.stepper.stepsPerSecond = 0;
-            depot.group[i].config.stepper.numSteps = 400;
+            depot.group[i].config.stepper.stepsRemaining = 0;
         }
     }
 }
@@ -272,20 +267,11 @@ unsigned int set_bounds_servo(unsigned int group, unsigned int line, unsigned in
     return(NO_ERROR);
 }
 
-unsigned int set_position(unsigned int group, unsigned int line, unsigned int position){
+unsigned int set_position_servo(unsigned int group, unsigned int line, unsigned int position){
     CHECK(SERVO)
     if(SRV(group,line).lowerBound <= position && position <= SRV(group,line).upperBound){
         SRV(group,line).position = position;
-        return(NO_ERROR);
-    }
-    return(ERROR);
-}
-
-unsigned int move_num_steps_servo(unsigned int group, unsigned int line, unsigned int num_steps, int direction){
-    CHECK(SERVO)
-    unsigned int position = SRV(group,line).position + (num_steps*direction);
-    if(SRV(group,line).lowerBound <= position && position <= SRV(group,line).upperBound){
-        SRV(group,line).position = position;
+        setLine(group, line, SRV(group,line).position);
         return(NO_ERROR);
     }
     return(ERROR);
@@ -319,7 +305,83 @@ const unsigned int states[3][8][4] = {
 };
 
 #define STEPPER_STATE states[STEP(group).method][STEP(group).state]
-#define ADVANCE_STATE STEP(group).state = (STEP(group).state + direction) % STEP(group).method_size;
+#define ADVANCE_STATE STEP(group).state = (STEP(group).state + direction) % STEP(group).methodSize;
+
+unsigned int timersInUse[4] = {8, 8, 8, 8};
+
+volatile unsigned short* TA[4][4] = {
+    {((volatile uint16_t *)0x40000000), ((volatile uint16_t *)0x40000002), ((volatile uint16_t *)0x40000012), ((volatile uint16_t *)0x40000020)},
+    {((volatile uint16_t *)0x40000400), ((volatile uint16_t *)0x40000402), ((volatile uint16_t *)0x40000412), ((volatile uint16_t *)0x40000420)},
+    {((volatile uint16_t *)0x40000800), ((volatile uint16_t *)0x40000802), ((volatile uint16_t *)0x40000812), ((volatile uint16_t *)0x40000820)},
+    {((volatile uint16_t *)0x40000C00), ((volatile uint16_t *)0x40000C02), ((volatile uint16_t *)0x40000C12), ((volatile uint16_t *)0x40000C20)},
+};
+
+#define CTL 0
+#define CCTL0 1
+#define CCR0 2
+#define EX0 3
+
+#define NVIC_PRI2_R             (*(volatile uint32_t *)0xE000E408)  // Interrupt 8-11 Priority
+#define NVIC_PRI3_R             (*(volatile uint32_t *)0xE000E40C)  // Interrupt 12-15 Priority
+#define NVIC_PRI6_R             (*(volatile uint32_t *)0xE000E418)  // Interrupt 24-27 Priority
+#define NVIC_PRI7_R             (*(volatile uint32_t *)0xE000E41C)  // Interrupt 28-31 Priority
+#define NVIC_EN0_R              (*(volatile uint32_t *)0xE000E100)  // Interrupt 0-31 Set Enable
+
+void (*Task[4])(unsigned int);
+
+unsigned int Timer_Init(void (*task)(unsigned int), unsigned short period, unsigned int timer_num){
+
+    if(timer_num > 3) {
+        return(ERROR);
+    }
+    Task[timer_num] = task;
+    *(TA[timer_num][CTL]) &= ~0x0030;
+    *(TA[timer_num][CTL]) = 0x0242;
+    *(TA[timer_num][CCTL0]) = 0x0010;
+    *(TA[timer_num][CCR0]) = period - 1;
+    *(TA[timer_num][EX0]) &= ~0x0007;
+    switch(timer_num){
+        case 0:
+            NVIC_PRI2_R = (NVIC_PRI2_R&0xFFFFFF00)|0x00000040; // priority 2
+            NVIC_EN0_R |= 0x00000100;         // interrupt 24/8
+            break;
+        case 1:
+            NVIC_PRI2_R = (NVIC_PRI2_R&0xFF00FFFF)|0x00400000; // priority 2
+            NVIC_EN0_R |= 0x00000400;         // interrupt 26/10
+            break;
+        case 2:
+            NVIC_PRI3_R = (NVIC_PRI3_R&0xFFFFFF00)|0x00000040; // priority 2
+            NVIC_EN0_R |= 0x00001000;         // interrupt 28/12
+            break;
+        case 3:
+            NVIC_PRI3_R = (NVIC_PRI3_R&0xFF00FFFF)|0x00400000; // priority 2
+            NVIC_EN0_R |= 0x00004000;         // interrupt 30/14
+            break;
+    }
+    *(TA[timer_num][CTL]) |= 0x0014;
+    return(NO_ERROR);
+
+}
+
+void TA0_0_IRQHandler(void){
+    *(TA[0][CCTL0]) &= ~0x0001;
+    (*Task[0])(0);
+}
+
+void TA1_0_IRQHandler(void){
+    *(TA[1][CCTL0]) &= ~0x0001;
+    (*Task[1])(1);
+}
+
+void TA2_0_IRQHandler(void){
+    *(TA[2][CCTL0]) &= ~0x0001;
+    (*Task[2])(2);
+}
+
+void TA3_0_IRQHandler(void){
+    *(TA[3][CCTL0]) &= ~0x0001;
+    (*Task[3])(3);
+}
 
 unsigned int suspend_stepper(unsigned int group){
     CHECK(STEPPER)
@@ -333,21 +395,15 @@ unsigned int resume_stepper(unsigned int group){
     return(NO_ERROR);
 }
 
-unsigned int set_num_steps_stepper(unsigned int group, unsigned int num_steps){
-    CHECK(STEPPER)
-    STEP(group).numSteps = num_steps;
-    return(NO_ERROR);
-}
-
-unsigned int select_stepping_method(unsigned int group, unsigned int method){
+unsigned int select_method_stepper(unsigned int group, unsigned int method){
     CHECK(STEPPER)
     switch(method){
         case STANDARD:
         case HI_TORQUE:
-            STEP(group).method_size = 4;
+            STEP(group).methodSize = 4;
             break;
         case HALF_STEPS:
-            STEP(group).method_size = 8;
+            STEP(group).methodSize = 8;
             break;
         default:
             return(ERROR);
@@ -361,28 +417,102 @@ unsigned int move_one_step_stepper(unsigned int group, int direction, bool wait)
     setGroup(group,STEPPER_STATE);
     ADVANCE_STATE
     if (wait){
-        unsigned int j = SystemCoreClock/2000;
+        unsigned int j = clockHz/500;
         while(j--);
     }
     return(NO_ERROR);
 }
 
-unsigned int move_num_steps_blocking(unsigned int group, unsigned int num_steps, int direction){
+void move_one_step_timer(unsigned int timer){
+    unsigned int group = timersInUse[timer];
+    int direction = STEP(group).direction;
+    setGroup(group,STEPPER_STATE);
+    ADVANCE_STATE
+    STEP(group).stepsRemaining--;
+    if(STEP(group).stepsRemaining == 0){
+        timersInUse[timer] = 8;
+        (*TA[timer][CTL]) &= ~0x0302;
+    }
+}
+
+unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
+    if(STEP(group).methodSize == 8){
+        num_steps *= 2;
+    }
     for(int i = 0; i < num_steps; i++){
         move_one_step_stepper(group,direction, true);
     }
     return(NO_ERROR);
 }
 
-unsigned int move_num_steps_nonblocking(unsigned int group, unsigned int num_steps, int direction){
+unsigned int move_num_steps_nonblocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
-    
+    unsigned int i;
+    for(i = 0; i < 4; i++){
+        if(timersInUse[i] == group){
+            return(ERROR);
+        }
+    }
+    for(i = 0; i < 4; i++){
+        if(timersInUse[i] == 8){
+            break;
+        }
+    }
+    if(i == 4){
+        return(ERROR);
+    }
+    STEP(group).stepsRemaining = num_steps;
+    STEP(group).direction = direction;
+    timersInUse[i] = group;
+    Timer_Init(move_one_step_timer, clockHz/(500*4), i);
     return(NO_ERROR);
 }
 
-unsigned int move_continuous_stepper(unsigned int group, unsigned int speed, int direction){
+
+void move_one_step_continuous(unsigned int timer){
+    unsigned int group = timersInUse[timer];
+    int direction = STEP(group).direction;
+    setGroup(group,STEPPER_STATE);
+    ADVANCE_STATE
+}
+
+unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSecond, int direction){
     CHECK(STEPPER)
-    
+    unsigned int i;
+    for(i = 0; i < 4; i++){
+        if(timersInUse[i] == group){
+            return(ERROR);
+        }
+    }
+    for(i = 0; i < 4; i++){
+        if(timersInUse[i] == 8){
+            break;
+        }
+    }
+    if(i == 4){
+        return(ERROR);
+    }
+    STEP(group).stepsPerSecond = stepsPerSecond;
+    STEP(group).direction = direction;
+    timersInUse[i] = group;
+    Timer_Init(move_one_step_continuous, clockHz/(stepsPerSecond*2), i);
     return(NO_ERROR);
 }
+
+unsigned int stop_continuous_stepper(unsigned int group){
+    CHECK(STEPPER)
+    int i;
+    for(i = 0; i < 4; i++){
+        if(timersInUse[i] == group){
+            break;
+        }
+    }
+    if(i == 4){
+        return(ERROR);
+    }
+    timersInUse[i] = 8;
+    (*TA[i][CTL]) &= ~0x0302;
+    return(NO_ERROR);
+}
+

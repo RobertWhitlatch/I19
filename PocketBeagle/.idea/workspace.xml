@@ -2,7 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="21e7b8f7-f92c-4017-ab9a-65df6a3937d9" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/MotorLibrary.py" beforeDir="false" afterPath="$PROJECT_DIR$/MotorLibrary.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/MotorLibrary.uvguix.Mitchell" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/MotorLibrary.uvguix.Mitchell" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/inc/Master.h" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/inc/Master.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/inc/MotorDepot.h" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/inc/MotorDepot.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/inc/MotorDepotConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/inc/MotorDepotConfig.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/src/MotorDepot.c" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/src/MotorDepot.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MSP432/src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/../MSP432/src/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,13 +21,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/MotorLibrary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1734">
-              <caret line="348" column="40" lean-forward="true" selection-start-line="348" selection-start-column="40" selection-end-line="348" selection-end-column="40" />
+            <state relative-caret-position="-6290">
+              <caret line="8" column="14" lean-forward="true" selection-start-line="8" selection-start-column="14" selection-end-line="8" selection-end-column="14" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
-                <element signature="e#165#345#0" />
-                <element signature="e#383#612#0" />
-                <element signature="e#5794#5969#0" />
               </folding>
             </state>
           </provider>
@@ -57,8 +60,9 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="-8" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="1448" />
+    <option name="y" value="-11" />
     <option name="width" value="1527" />
     <option name="height" value="1056" />
   </component>
@@ -403,10 +407,9 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
-    <editor active="true" />
+    <frame x="1912" y="-8" width="1382" height="784" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15542677" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21949404" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -458,13 +461,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/MotorLibrary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1734">
-          <caret line="348" column="40" lean-forward="true" selection-start-line="348" selection-start-column="40" selection-end-line="348" selection-end-column="40" />
+        <state relative-caret-position="-6290">
+          <caret line="8" column="14" lean-forward="true" selection-start-line="8" selection-start-column="14" selection-end-line="8" selection-end-column="14" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
-            <element signature="e#165#345#0" />
-            <element signature="e#383#612#0" />
-            <element signature="e#5794#5969#0" />
           </folding>
         </state>
       </provider>

@@ -42,9 +42,7 @@ unsigned int resume_servo(unsigned int group, unsigned int line);
 
 unsigned int set_bounds_servo(unsigned int group, unsigned int line, unsigned int upper, unsigned int lower);
 
-unsigned int set_position(unsigned int group, unsigned int line, unsigned int position);
-
-unsigned int move_num_steps_servo(unsigned int group, unsigned int line, unsigned int num_steps, int direction);
+unsigned int set_position_servo(unsigned int group, unsigned int line, unsigned int position);
 
 //>>>>>>>>>>>>>>>>Stepper<<<<<<<<<<<<<<<<<<<//
 
@@ -54,14 +52,18 @@ unsigned int resume_stepper(unsigned int group);
 
 unsigned int set_num_steps_stepper(unsigned int group, unsigned int num_steps);
 
-unsigned int set_stepping_method(unsigned int group, unsigned int method);
+unsigned int select_method_stepper(unsigned int group, unsigned int method);
 
 unsigned int move_one_step_stepper(unsigned int group, int direction, bool wait);
 
-unsigned int move_num_steps_stepper_blocking(unsigned int group, unsigned int speed, int direction);
+unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int num_steps, int direction);
 
-unsigned int move_num_steps_stepper_nonblocking(unsigned int group, unsigned int speed, int direction);
+// WARNING: While this is nonblocking, the interrupt has a heavy time requirement
+unsigned int move_num_steps_nonblocking_stepper(unsigned int group, unsigned int num_steps, int direction);
 
-unsigned int move_continuous_stepper(unsigned int group, unsigned int speed, int direction);
+// WARNING: While this is nonblocking, the interrupt has a heavy time requirement
+unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSecond, int direction);
+
+unsigned int stop_continuous_stepper(unsigned int group);
 
 #endif // __MOTOR_DEPOT_H__

@@ -4,32 +4,28 @@
 #define PWM_BASE 0x40
 
 void initGPIO(unsigned int* board){
-    uint8_t data;
+    uint8_t data = 0xE0;
     if(board[0]){
-        data = 0x10;
-        writeI2C(GPIO_BASE, 1, &data, 1);
-        data = 0xE0;
         writeI2C(GPIO_BASE, 3, &data, 1);
+        writeI2C(GPIO_BASE, 1, &data, 1);
     }
     if(board[1]){
-        data = 0x10;
-        writeI2C(GPIO_BASE+1, 1, &data, 1);
-        data = 0xE0;
         writeI2C(GPIO_BASE+1, 3, &data, 1);
+        writeI2C(GPIO_BASE+1, 1, &data, 1);
     }
 }
 
 void disablePower(unsigned int board){
     uint8_t data;
     readI2C(GPIO_BASE+board, 1, &data, READ_REG);
-    data &= ~0x10;
+    data |= 0x10;
     writeI2C(GPIO_BASE+board, 1, &data, 1);
 }
 
 void enablePower(unsigned int board){
     uint8_t data;
     readI2C(GPIO_BASE+board, 1, &data, READ_REG);
-    data |= 0x10;
+    data &= ~0x10;
     writeI2C(GPIO_BASE+board, 1, &data, 1);
 }
 
@@ -57,6 +53,9 @@ void initPWM(unsigned int* board){
         data = 0x20;
         writeI2C(PWM_BASE, 0, &data, 1);
         data = 0x00;
+        for(uint8_t reg = 2; reg < 6; reg++){
+            writeI2C(PWM_BASE, reg, &data, 1);
+        }
         for(uint8_t reg = 9; reg < 70; reg += 4){
             writeI2C(PWM_BASE, reg, &data, 1);
         }
@@ -65,6 +64,9 @@ void initPWM(unsigned int* board){
         data = 0x20;
         writeI2C(PWM_BASE+1, 0, &data, 1);
         data = 0x00;
+        for(uint8_t reg = 2; reg < 6; reg++){
+            writeI2C(PWM_BASE, reg, &data, 1);
+        }
         for(uint8_t reg = 9; reg < 70; reg += 4){
             writeI2C(PWM_BASE+1, reg, &data, 1);
         }
@@ -129,15 +131,22 @@ void setChannel(unsigned int group, unsigned int channel, unsigned int power1, u
 void setGroup(unsigned int group, const unsigned int* powers){
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
-    uint8_t reg = 6 + localGroup*16;
-    uint8_t data[16] = {0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10};
+    uint8_t reg = 7 + localGroup*16;
+    uint8_t on = 0x10;
+    uint8_t off = 0x00;
     for(int i = 0; i < 4; i++){
-        setPower(data+i*4, powers[i]);
+        (powers[i] == FULL_ON) ? writeI2C(PWM_BASE+board, reg+i*4, &on, 1) : writeI2C(PWM_BASE+board, reg+i*4, &off, 1);
     }
-    writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+
+    //uint8_t data[16] = {0x00, 0x10, 0x00, 0x10,
+    //                    0x00, 0x10, 0x00, 0x10,
+    //                    0x00, 0x10, 0x00, 0x10,
+    //                    0x00, 0x10, 0x00, 0x10};
+    //for(int i = 0; i < 4; i++){
+    //    setPower(data+i*4, powers[i]);
+    //}
+    //writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+    
 }
 
 void print_gpio_registers(unsigned int board){
