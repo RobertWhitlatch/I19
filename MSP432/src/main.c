@@ -146,6 +146,73 @@ int main(void){
                 case '(':
                     stop_continuous_stepper(0);
                     break;
+                case 'x':
+                    fprintf(uart, "Welcome to Bridged Menu!\nBridged>");
+                    while(1){
+                        if((in_char = fgetc(uart)) > -1){
+                            fprintf(uart, "%c\n", in_char);
+                            switch(in_char){
+                                case '1':
+                                    set_all_bridged(0, DECAY_FAST, DIRECTION_FORWARD, 2048, true);
+                                    break;
+                                case '2':
+                                    set_all_bridged(0, DECAY_SLOW, DIRECTION_FORWARD, 2048, true);
+                                    break;
+                                case '3':
+                                    set_all_bridged(0, DECAY_FAST, DIRECTION_BACKWARD, 2048, true);
+                                    break;
+                                case '4':
+                                    set_all_bridged(0, DECAY_SLOW, DIRECTION_BACKWARD, 2048, true);
+                                    break;
+                                case '5':
+                                    suspend_bridged(0);
+                                    break;
+                                case '6':
+                                    resume_bridged(0);
+                                    break;
+                                case '7':
+                                    set_all_bridged(0, DECAY_FAST, DIRECTION_FORWARD, FULL_ON, true);
+                                    break;
+                                case '8':
+                                    set_all_bridged(0, DECAY_SLOW, DIRECTION_FORWARD, FULL_ON, true);
+                                    break;
+                                case '9':
+                                    set_all_bridged(0, DECAY_FAST, DIRECTION_BACKWARD, FULL_ON, true);
+                                    break;
+                                case '0':
+                                    set_all_bridged(0, DECAY_SLOW, DIRECTION_BACKWARD, FULL_ON, true);
+                                    break;
+                                case 'h':
+                                case 'H':
+                                    fprintf(uart,
+                                                  "1 - 2048, Fast, Forward\n"
+                                                  "2 - 2048, Slow, Forward\n"
+                                                  "3 - 2048, Fast, Backward\n"
+                                                  "4 - 2048, Slow, Backward\n"
+                                                  "5 - Stop\n"
+                                                  "6 - Start\n"
+                                                  "7 - Full On, Fast, Forward\n"
+                                                  "8 - Full On, Slow, Forward\n"
+                                                  "9 - Full On, Fast, Backward\n"
+                                                  "0 - Full On, Slow, Backward\n"
+                                                );
+                                    fprintf(uart, "h - Help Menu\n");
+                                    fprintf(uart, "q - Return to Main Menu\n");
+                                    fprintf(uart, "~ - Clear Screen\n");
+                                    break;
+                                case 'q':
+                                    goto MenuExit;
+                                case '~':
+                                    CLEAR_SCREEN
+                                    break;
+                                default:
+                                    break;
+                            }
+                            fprintf(uart, "Bridged>");
+                        }
+                    }
+                    MenuExit:
+                    break;
                 case 'h':
                 case 'H':
                     fprintf(uart, "1/! - Read/Write Board 0 GPIO\n");
@@ -157,6 +224,7 @@ int main(void){
                     fprintf(uart, "7/& - Move Stepper 200 steps left/right (nonblocking)\n");
                     fprintf(uart, "8/* - Move Stepper continuously left/right\n");
                     fprintf(uart, "9/( - Change Method/Stop Stepper\n");
+                    fprintf(uart, "x - Bridged SubMenu\n");
                     fprintf(uart, "h - Help Menu\n");
                     fprintf(uart, "~ - Clear Screen\n");
                     break;
@@ -170,3 +238,31 @@ int main(void){
         }
     }
 }
+
+/*
+    case 'x':
+        fprintf(uart, "Welcome to SubMenu!\nSubMenu>");
+        while(1){
+            if((in_char = fgetc(uart)) > -1){
+                fprintf(uart, "%c\n", in_char);
+                switch(in_char){
+                    case 'h':
+                    case 'H':
+                        fprintf(uart, "h - Help Menu\n");
+                        fprintf(uart, "q - Return to Main Menu\n");
+                        fprintf(uart, "~ - Clear Screen\n");
+                        break;
+                    case 'q':
+                        goto MenuExit;
+                    case '~':
+                        CLEAR_SCREEN
+                        break;
+                    default:
+                        break;
+                }
+                fprintf(uart, "SubMenu>");
+            }
+        }
+        MenuExit:
+        break;
+*/

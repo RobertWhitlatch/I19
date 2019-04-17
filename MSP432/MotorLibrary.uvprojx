@@ -336,7 +336,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>TARGET_IS_MSP432P4XX</Define>
+              <Define></Define>
               <Undefine></Undefine>
               <IncludePath>.\inc;.\inc_lib</IncludePath>
             </VariousControls>

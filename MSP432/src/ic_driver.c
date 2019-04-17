@@ -47,27 +47,29 @@ void enableDriver(unsigned int group){
     writeI2C(GPIO_BASE+board, 1, &data, 1);
 }
 
-void initPWM(unsigned int* board){
+void initPWM(unsigned int* board, unsigned int* freq){
     uint8_t data;
     if(board[0]){
+//        if(24 <= freq[0] && freq[0] <= 1526){
+//            data = calculatePrescale(freq[0]);
+//            writeI2C(PWM_BASE, 0xFE, &data, 1);
+//        }
         data = 0x20;
         writeI2C(PWM_BASE, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 2; reg < 6; reg++){
-            writeI2C(PWM_BASE, reg, &data, 1);
-        }
-        for(uint8_t reg = 9; reg < 70; reg += 4){
-            writeI2C(PWM_BASE, reg, &data, 1);
+        for(uint8_t reg = 6; reg < 70; reg++){
+            writeI2C(PWM_BASE+1, reg, &data, 1);
         }
     }
     if(board[1]){
+//        if(24 <= freq[1] && freq[1] <= 1526){
+//            data = calculatePrescale(freq[1]);
+//            writeI2C(PWM_BASE+1, 0xFE, &data, 1);
+//        }
         data = 0x20;
         writeI2C(PWM_BASE+1, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 2; reg < 6; reg++){
-            writeI2C(PWM_BASE, reg, &data, 1);
-        }
-        for(uint8_t reg = 9; reg < 70; reg += 4){
+        for(uint8_t reg = 6; reg < 70; reg++){
             writeI2C(PWM_BASE+1, reg, &data, 1);
         }
     }
@@ -105,11 +107,7 @@ void setPower(uint8_t* data, unsigned int power){
     }
 }
 
-#define PWMx_ON_L 0
-#define PWMx_ON_H 1
-#define PWMx_OFF_L 2
-#define PWMx_OFF_H 3
-void setLine(unsigned int group, unsigned int line, unsigned int power){
+void setServo(unsigned int group, unsigned int line, unsigned int power){
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = 6 + localGroup*16 + line*4;
@@ -118,7 +116,7 @@ void setLine(unsigned int group, unsigned int line, unsigned int power){
     writeI2C(PWM_BASE+board, reg, data, sizeof(data));
 }
 
-void setChannel(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2){
+void setBrushed(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2){
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = 6 + localGroup*16 + channel*8;
@@ -128,25 +126,49 @@ void setChannel(unsigned int group, unsigned int channel, unsigned int power1, u
     writeI2C(PWM_BASE+board, reg, data, sizeof(data));
 }
 
-void setGroup(unsigned int group, const unsigned int* powers){
+void setBridged(unsigned int group, unsigned int power1, unsigned int power2){
+
+    uint8_t localGroup = group % 4;
+    uint8_t board = group/4;
+    uint8_t reg = 6 + localGroup*16;
+    uint8_t data[16] = {
+                        0x00, 0x10, 0x00, 0x10,
+                        0x00, 0x10, 0x00, 0x10,
+                        0x00, 0x10, 0x00, 0x10,
+                        0x00, 0x10, 0x00, 0x10,
+                       };
+    setPower(data, power1);
+    setPower(data+4, power2);
+    setPower(data+8, power1);
+    setPower(data+12, power2);
+    writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+
+}
+
+void setStepper(unsigned int group, const unsigned int* powers){
+
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = 7 + localGroup*16;
-    uint8_t on = 0x10;
-    uint8_t off = 0x00;
+    uint8_t data;
     for(int i = 0; i < 4; i++){
-        (powers[i] == FULL_ON) ? writeI2C(PWM_BASE+board, reg+i*4, &on, 1) : writeI2C(PWM_BASE+board, reg+i*4, &off, 1);
+        data = powers[i];
+        writeI2C(PWM_BASE+board, reg+i*4, &data, 1);
     }
 
-    //uint8_t data[16] = {0x00, 0x10, 0x00, 0x10,
-    //                    0x00, 0x10, 0x00, 0x10,
-    //                    0x00, 0x10, 0x00, 0x10,
-    //                    0x00, 0x10, 0x00, 0x10};
-    //for(int i = 0; i < 4; i++){
-    //    setPower(data+i*4, powers[i]);
-    //}
-    //writeI2C(PWM_BASE+board, reg, data, sizeof(data));
-    
+}
+
+unsigned int calculatePrescale(unsigned int freq){
+
+    unsigned int divisor = 4096*freq;
+    unsigned int integer = 25000000/divisor;
+    unsigned int remainder = 25000000 % divisor;
+    if(remainder >= divisor/2){
+        integer++;
+    }
+    integer--;
+    return(integer);
+
 }
 
 void print_gpio_registers(unsigned int board){
