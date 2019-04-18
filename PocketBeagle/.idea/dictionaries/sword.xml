@@ -1,7 +1,10 @@
 <component name="ProjectDictionaryState">
   <dictionary name="sword">
     <words>
+      <w>adafruit</w>
       <w>gpio</w>
+      <w>prescaler</w>
+      <w>whitlatch</w>
     </words>
   </dictionary>
 </component>

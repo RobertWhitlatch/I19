@@ -234,6 +234,8 @@ int main(void){
                                     set_position_servo(group, line, 410);
                                     for(int i = 0; i < 10000; i++);
                                     set_position_servo(group, line, 2048);
+                                    for(int i = 0; i < 10000; i++);
+                                    set_position_servo(group, line, 410);
                                     break;
                                 case 'x':
                                     targetGroup();

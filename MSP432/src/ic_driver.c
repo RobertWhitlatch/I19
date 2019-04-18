@@ -53,7 +53,7 @@ void initPWM(unsigned int* board, unsigned int* freq){
         data = 0x80;
         writeI2C(PWM_BASE, 0x00, &data, 1);
         if(24 <= freq[0] && freq[0] <= 1526){
-            data = 0x31;
+            data = 0x30;
             writeI2C(PWM_BASE, 0x00, &data, 1);
             data = calculatePrescale(freq[0]);
             writeI2C(PWM_BASE, 0xFE, &data, 1);
@@ -77,7 +77,7 @@ void initPWM(unsigned int* board, unsigned int* freq){
         data = 0x80;
         writeI2C(PWM_BASE+1, 0x00, &data, 1);
         if(24 <= freq[1] && freq[1] <= 1526){
-            data = 0x31;
+            data = 0x30;
             writeI2C(PWM_BASE+1,0x00, &data, 1);
             data = calculatePrescale(freq[1]);
             writeI2C(PWM_BASE+1, 0xFE, &data, 1);

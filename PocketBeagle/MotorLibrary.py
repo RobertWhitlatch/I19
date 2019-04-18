@@ -3,11 +3,6 @@ from time import sleep
 
 import Adafruit_GPIO.I2C as I2C
 
-_pwm_on_l = 0
-_pwm_on_h = 1
-_pwm_off_l = 2
-_pwm_off_h = 3
-
 
 def _print_gpio_registers(gpio):
     print('GPIO Contents')
@@ -30,15 +25,27 @@ def _print_pwm_registers(pwm):
 
 class MotorDepot(object):
 
-    def __init__(self, bus=2):
+    # Board Frequency can be set to:
+    #     200Hz -> Standard Frequency, Stepper speed severely hampered
+    #     1000Hz -> Stepper Focused Frequency, Servos inoperable
+    #     1526Hz -> Fastest Frequency, Use if only Brushed and/or Bridged are in use
+
+    def __init__(self, board_zero_freq=200, board_one_freq=200, bus=2):
         self._bus = bus
         self._board_status = [0, 0]
+        self._board_freq = [board_zero_freq, board_one_freq]
         self._gpio_addresses = [0x20, 0x21]
         self._pwm_addresses = [0x40, 0x41]
         self._gpio = [None, None]
         self._pwm = [None, None]
         self._groups = [None, None, None, None, None, None, None, None]
         self._group_status = [0, 0, 0, 0, 0, 0, 0, 0]
+        if board_zero_freq != 200 & board_zero_freq != 1000 & board_zero_freq != 1526:
+            print("Unsupported Frequency supplied for board zero, defaulting to 200Hz")
+            self._board_freq[0] = 200
+        if board_one_freq != 200 & board_one_freq != 1000 & board_one_freq != 1526:
+            print("Unsupported Frequency supplied for board one, defaulting to 200Hz")
+            self._board_freq[1] = 200
         for i in range(2):
             self._check_active_addresses(i, bus)
 
@@ -58,7 +65,13 @@ class MotorDepot(object):
                 self._board_status[i] = 1
                 self._gpio[i].write8(0x03, 0xE0)
                 self._gpio[i].write8(0x01, 0xE0)
-                self._pwm[i].write8(0x00, 0x00)
+                x = self._pwm[i].readU8(0x00)
+                if x & 0x80 == 0x80:
+                    self._pwm[i].write8(0x00, 0x80)
+                self._pwm[i].write8(0x00, 0x30)
+                prescaler = (round(25000000/(4096*self._board_freq[i])) - 1) & 0xFF
+                self._pwm[i].write8(0xFE, prescaler)
+                self._pwm[i].write8(0x00, 0x20)
                 for z in range(2, 6):
                     self._pwm[i].write8(z, 0x00)
 
@@ -73,14 +86,20 @@ class MotorDepot(object):
                 x = self._gpio[group_num//4].readU8(0x01)
                 x = x | (0x01 << (group_num % 4))
                 self._gpio[group_num//4].write8(0x01, x)
-            elif group_config is 'Servo':
+            elif group_config is 'Bridged':
                 self._group_status[group_num] = 2
+                self._groups[group_num] = [Bridged(self._pwm[group_num//4], self._gpio[group_num//4], group_num)]
+                x = self._gpio[group_num//4].readU8(0x01)
+                x = x | (0x01 << (group_num % 4))
+                self._gpio[group_num//4].write8(0x01, x)
+            elif group_config is 'Servo':
+                self._group_status[group_num] = 3
                 self._groups[group_num] = [Servo(self._pwm[group_num//4], group_num, 0),
                                            Servo(self._pwm[group_num//4], group_num, 1),
                                            Servo(self._pwm[group_num//4], group_num, 2),
                                            Servo(self._pwm[group_num//4], group_num, 3)]
             elif group_config is 'Stepper':
-                self._group_status[group_num] = 3
+                self._group_status[group_num] = 4
                 self._groups[group_num] = [Stepper(self._pwm[group_num//4], self._gpio[group_num//4], group_num)]
                 x = self._gpio[group_num//4].readU8(0x01)
                 x = x | (0x01 << (group_num % 4))
@@ -100,6 +119,15 @@ class MotorDepot(object):
             group_num += 4
         if self.is_group_available(group_num) is False:
             if group_config is 'Brushed':
+                for x in self._groups[group_num]:
+                    for y in range(sys.getrefcount(x)):
+                        del y
+                x = self._gpio[group_num//4].readU8(0x01)
+                x = x & ~(0x1 << (group_num % 4))
+                self._gpio[group_num//4].write8(0x01, x)
+                self._groups[group_num] = None
+                self._group_status[group_num] = 0
+            elif group_config is 'Bridged':
                 for x in self._groups[group_num]:
                     for y in range(sys.getrefcount(x)):
                         del y
@@ -178,39 +206,35 @@ class MotorDepot(object):
 
 class Brushed(object):
 
-    def __init__(self, i2c, group_num, channel_num):
-        self._forward_reg = [None, None, None, None]
-        self._reverse_reg = [None, None, None, None]
-        self._i2c = i2c
+    def __init__(self, pwm, group_num, channel_num):
+        self._registers = [0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10]
+        self._pwm = pwm
         self._group_num = group_num
         self._channel_num = channel_num
         self._speed = None
         self._direction = None
         self._decay = None
-        x = 6 + (group_num % 4)*16 + channel_num*8
+        self._base_reg = 6 + (group_num % 4)*16 + channel_num*8
+
+    @staticmethod
+    def _set_power(reg, index, power):
         for i in range(4):
-            self._forward_reg[i] = x + i
-            self._reverse_reg[i] = x + i + 4
-        self._i2c.write8(self._forward_reg[_pwm_off_l], 0x00)
-        self._i2c.write8(self._forward_reg[_pwm_off_h], 0x00)
-        self._i2c.write8(self._reverse_reg[_pwm_off_l], 0x00)
-        self._i2c.write8(self._reverse_reg[_pwm_off_h], 0x00)
+            reg[index + i] = 0x00
+        if power is 0:
+            reg[index + 3] = 0x10
+        elif power is 4096:
+            reg[index + 1] = 0x10
+        else:
+            reg[index + 2] = power & 0x00FF
+            reg[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
-        f = self._i2c.readU8(self._forward_reg[_pwm_off_h])
-        r = self._i2c.readU8(self._reverse_reg[_pwm_off_h])
-        f = f | 0x10
-        r = r | 0x10
-        self._i2c.write8(self._forward_reg[_pwm_off_h], f)
-        self._i2c.write8(self._reverse_reg[_pwm_off_h], r)
+        self._set_power(self._registers, 0, 0)
+        self._set_power(self._registers, 4, 0)
+        self._pwm.writeList(self._base_reg, self._registers)
 
     def resume(self):
-        f = self._i2c.readU8(self._forward_reg[_pwm_off_h])
-        r = self._i2c.readU8(self._reverse_reg[_pwm_off_h])
-        f = f & 0xEF
-        r = r & 0xEF
-        self._i2c.write8(self._forward_reg[_pwm_off_h], f)
-        self._i2c.write8(self._reverse_reg[_pwm_off_h], r)
+        self.update()
 
     def set_decay(self, decay, update=True):
         if decay is not 'fast' and decay is not 'slow':
@@ -229,16 +253,16 @@ class Brushed(object):
             self.update()
 
     def set_speed(self, speed, update=True):
-        if speed > 4095 or speed < 0:
-            print('Invalid speed, please use values between 0 and 4095, inclusive')
+        if speed > 4096 or speed < 0:
+            print('Invalid speed, please use values between 0 and 4096, inclusive')
         else:
             self._speed = speed
         if update:
             self.update()
 
     def set_velocity(self, velocity, update=True):
-        if velocity < -4095 or velocity > 4095:
-            print('Invalid velocity, please use values between -4095 and 4095, inclusive')
+        if velocity < -4096 or velocity > 4096:
+            print('Invalid velocity, please use values between -4096 and 4096, inclusive')
         else:
             if velocity < 0:
                 self._direction = 'reverse'
@@ -262,58 +286,168 @@ class Brushed(object):
             self.update()
 
     def update(self):
-        if self._speed == 0:
-            self._i2c.write8(self._forward_reg[_pwm_on_l], 0x00)
-            self._i2c.write8(self._forward_reg[_pwm_on_h], 0x00)
-            self._i2c.write8(self._forward_reg[_pwm_off_l], 0x00)
-            self._i2c.write8(self._forward_reg[_pwm_off_h], 0x10)
-            self._i2c.write8(self._reverse_reg[_pwm_on_l], 0x00)
-            self._i2c.write8(self._reverse_reg[_pwm_on_h], 0x00)
-            self._i2c.write8(self._reverse_reg[_pwm_off_l], 0x00)
-            self._i2c.write8(self._reverse_reg[_pwm_off_h], 0x10)
-            return
-
         if self._direction is 'forward':
             if self._decay is 'fast':
-                self._i2c.write8(self._reverse_reg[_pwm_off_l], 0x00)
-                self._i2c.write8(self._reverse_reg[_pwm_off_h], 0x10)
-                self._i2c.write8(self._forward_reg[_pwm_off_l], (self._speed & 0xFF))
-                self._i2c.write8(self._forward_reg[_pwm_off_h], ((self._speed & 0xF00) >> 8))
+                self._set_power(self._base_reg, 0, self._speed)
+                self._set_power(self._base_reg, 4, 0)
             else:
-                speed_n = 4095 - self._speed
-                self._i2c.write8(self._forward_reg[_pwm_on_l], 0x00)
-                self._i2c.write8(self._forward_reg[_pwm_on_h], 0x10)
-                self._i2c.write8(self._reverse_reg[_pwm_off_l], (speed_n & 0xFF))
-                self._i2c.write8(self._reverse_reg[_pwm_off_h], ((speed_n & 0xF00) >> 8))
-
+                speed_n = 4096 - self._speed
+                self._set_power(self._base_reg, 0, 4096)
+                self._set_power(self._base_reg, 4, speed_n)
         else:
             if self._decay is 'fast':
-                self._i2c.write8(self._forward_reg[_pwm_off_l], 0x00)
-                self._i2c.write8(self._forward_reg[_pwm_off_h], 0x10)
-                self._i2c.write8(self._reverse_reg[_pwm_off_l], (self._speed & 0xFF))
-                self._i2c.write8(self._reverse_reg[_pwm_off_h], ((self._speed & 0xF00) >> 8))
+                self._set_power(self._base_reg, 0, 0)
+                self._set_power(self._base_reg, 4, self._speed)
             else:
-                speed_n = 4095 - self._speed
-                self._i2c.write8(self._reverse_reg[_pwm_on_l], 0x00)
-                self._i2c.write8(self._reverse_reg[_pwm_on_h], 0x10)
-                self._i2c.write8(self._forward_reg[_pwm_off_l], (speed_n & 0xFF))
-                self._i2c.write8(self._forward_reg[_pwm_off_h], ((speed_n & 0xF00) >> 8))
+                speed_n = 4096 - self._speed
+                self._set_power(self._base_reg, 0, speed_n)
+                self._set_power(self._base_reg, 4, 4096)
+        self._pwm.writeList(self._base_reg, self._registers)
+
+
+class Bridged(object):
+
+    def __init__(self, pwm, gpio, group_num):
+        self._registers = [0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10,
+                           0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10]
+        self._pwm = pwm
+        self._gpio = gpio
+        self._group_num = group_num
+        self._speed = None
+        self._direction = None
+        self._decay = None
+        self._base_reg = 6 + (group_num % 4)*16
+
+    @staticmethod
+    def _set_power(reg, index, power):
+        for i in range(4):
+            reg[index + i] = 0x00
+        if power is 0:
+            reg[index + 3] = 0x10
+        elif power is 4096:
+            reg[index + 1] = 0x10
+        else:
+            reg[index + 2] = power & 0x00FF
+            reg[index + 3] = (power & 0x0F00) >> 8
+
+    def suspend(self):
+        x = self._gpio.readU8(0x01)
+        x = x & ~(0x1 << (self._group_num % 4))
+        self._gpio.write8(0x01, x)
+
+    def resume(self):
+        x = self._gpio.readU8(0x01)
+        x = x | (0x1 << (self._group_num % 4))
+        self._gpio.write8(0x01, x)
+
+    def set_decay(self, decay, update=True):
+        if decay is not 'fast' and decay is not 'slow':
+            print("Invalid decay specified, please use 'fast' or 'slow'")
+        else:
+            self._decay = decay
+        if update:
+            self.update()
+
+    def set_direction(self, direction, update=True):
+        if direction is not 'forward' and direction is not 'reverse':
+            print('Invalid direction specified, please use "forward" or "reverse"')
+        else:
+            self._direction = direction
+        if update:
+            self.update()
+
+    def set_speed(self, speed, update=True):
+        if speed > 4096 or speed < 0:
+            print('Invalid speed, please use values between 0 and 4096, inclusive')
+        else:
+            self._speed = speed
+        if update:
+            self.update()
+
+    def set_velocity(self, velocity, update=True):
+        if velocity < -4096 or velocity > 4096:
+            print('Invalid velocity, please use values between -4096 and 4096, inclusive')
+        else:
+            if velocity < 0:
+                self._direction = 'reverse'
+                self._speed = -velocity
+            elif velocity > 0:
+                self._direction = 'forward'
+                self._speed = velocity
+            else:
+                self._speed = velocity
+        if update:
+            self.update()
+
+    def set_all(self, speed=None, direction=None, decay=None, update=True):
+        if speed is not None:
+            self.set_speed(speed, False)
+        if direction is not None:
+            self.set_direction(direction, False)
+        if decay is not None:
+            self.set_decay(decay, False)
+        if update:
+            self.update()
+
+    def update(self):
+        if self._direction is 'forward':
+            if self._decay is 'fast':
+                self._set_power(self._registers, 0, self._speed)
+                self._set_power(self._registers, 4, 0)
+                self._set_power(self._registers, 8, self._speed)
+                self._set_power(self._registers, 12, 0)
+            else:
+                speed_n = 4096 - self._speed
+                self._set_power(self._registers, 0, 4096)
+                self._set_power(self._registers, 4, speed_n)
+                self._set_power(self._registers, 8, 4096)
+                self._set_power(self._registers, 12, speed_n)
+        else:
+            if self._decay is 'fast':
+                self._set_power(self._registers, 0, 0)
+                self._set_power(self._registers, 4, self._speed)
+                self._set_power(self._registers, 8, 0)
+                self._set_power(self._registers, 12, self._speed)
+            else:
+                speed_n = 4096 - self._speed
+                self._set_power(self._registers, 0, speed_n)
+                self._set_power(self._registers, 4, 4096)
+                self._set_power(self._registers, 8, speed_n)
+                self._set_power(self._registers, 12, 4096)
+        self._pwm.writeList(self._base_reg, self._registers)
 
 
 class Servo(object):
 
-    def __init__(self, i2c, group_num, line_num):
-        self._i2c = i2c
+    def __init__(self, pwm, group_num, line_num):
+        self._pwm = pwm
         self._group_num = group_num
         self._line_num = line_num
-        self._reg = [None, None, None, None]
+        self._registers = [0x00, 0x00, 0x00, 0x10]
         self._position = 1230
         self._lower_bound = 410
         self._upper_bound = 2048
-        x = 6 + (group_num % 4)*16 + line_num*4
+        self._base_reg = 6 + (group_num % 4)*16 + line_num*4
+
+    @staticmethod
+    def _set_power(reg, index, power):
         for i in range(4):
-            self._reg[i] = x + i
-            self._i2c.write8(x+i, 0x00)
+            reg[index + i] = 0x00
+        if power is 0:
+            reg[index + 3] = 0x10
+        elif power is 4096:
+            reg[index + 1] = 0x10
+        else:
+            reg[index + 2] = power & 0x00FF
+            reg[index + 3] = (power & 0x0F00) >> 8
+
+    def suspend(self):
+        self._set_power(self._registers, 0, 0)
+        self._pwm.writeList(self._base_reg, self._registers)
+
+    def resume(self):
+        self._set_power(self._registers, 0, self._position)
+        self._pwm.writeList(self._base_reg, self._registers)
 
     def set_bounds(self, lower, upper):
         if lower < 410:
@@ -325,46 +459,65 @@ class Servo(object):
         self._lower_bound = lower
         self._upper_bound = upper
 
-    def suspend(self):
-        x = self._i2c.readU8(self._reg[_pwm_off_h])
-        x = x | 0x10
-        self._i2c.write8(self._reg[_pwm_off_h], x)
+    def get_lower_bound(self):
+        return self._lower_bound
 
-    def resume(self):
-        x = self._i2c.readU8(self._reg[_pwm_off_h])
-        x = x & 0xEF
-        self._i2c.write8(self._reg[_pwm_off_h], x)
+    def get_upper_bound(self):
+        return self._upper_bound
+
+    def get_position(self):
+        return self._position
 
     def set_position(self, position):
-        if position != 0:
-            if position < self._lower_bound or position > self._upper_bound:
-                print('Invalid position, please use values between ', self._lower_bound, ' and ', self._upper_bound, ' inclusive, or 0.\n', end='')
+        if position is 0:
+            self.suspend()
+            return
+        if position < self._lower_bound or position > self._upper_bound:
+            print('Invalid position, please use values between ',
+                  self._lower_bound, ' and ', self._upper_bound, ' inclusive, or 0.\n', end='')
         self._position = position
-        self._i2c.write8(self._reg[_pwm_off_l], (self._position & 0xFF))
-        self._i2c.write8(self._reg[_pwm_off_h], ((self._position & 0xF00) >> 8))
+        self._set_power(self._registers, 0, self._position)
+        self._pwm.writeList(self._base_reg, self._registers)
 
 
 class Stepper(object):
 
-    def __init__(self, i2c, gpio, group_num):
-        self._i2c = i2c
+    def __init__(self, pwm, gpio, group_num):
+        self._pwm = pwm
         self._gpio = gpio
         self._group_num = group_num
-        self._registers = [None, None, None, None]
-        self._standard_states = [[0x10, 0x00, 0x00, 0x00], [0x00, 0x00, 0x10, 0x00], [0x00, 0x10, 0x00, 0x00], [0x00, 0x00, 0x00, 0x10]]
-        self._torque_states = [[0x10, 0x00, 0x00, 0x10], [0x10, 0x00, 0x10, 0x00], [0x00, 0x10, 0x10, 0x00], [0x00, 0x10, 0x00, 0x10]]
-        self._half_states = [[0x10, 0x00, 0x00, 0x00], [0x10, 0x00, 0x10, 0x00], [0x00, 0x00, 0x10, 0x00], [0x00, 0x10, 0x10, 0x00],
-                             [0x00, 0x10, 0x00, 0x00], [0x00, 0x10, 0x00, 0x10], [0x00, 0x00, 0x00, 0x10], [0x10, 0x00, 0x00, 0x10]]
-        self._selected_states = self._half_states
-        self._selected_size = 8
-        self._active_state = 0
-        x = 7 + (group_num % 4) * 4
-        for j in range(4):
-            self._registers[j] = x + j*4
-        for j in range(16):
-            self._i2c.write8(x+j, 0x00)
+        self._registers = [0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10,
+                           0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10]
+        self._standard_states = [[4096, 0, 0, 0], [0, 0, 4096, 0],
+                                 [0, 4096, 0, 0], [0, 0, 0, 4096]]
+        self._torque_states = [[4096, 0, 0, 4096], [4096, 0, 4096, 0],
+                               [0, 4096, 4096, 0], [0, 4096, 0, 4096]]
+        self._half_states = [[4096, 0, 0, 0], [4096, 0, 4096, 0],
+                             [0, 0, 4096, 0], [0, 4096, 4096, 0],
+                             [0, 4096, 0, 0], [0, 4096, 0, 4096],
+                             [0, 0, 0, 4096], [4096, 0, 0, 4096]]
+        self._selected_states = self._standard_states
+        self._current_method = 'standard'
+        self._selected_size = 4
+        self._current_state = 0
+        self._current_spin = None
+        self._current_direction = None
+        self._base_reg = 6 + (group_num % 4) * 4
+
+    @staticmethod
+    def _set_power(reg, index, power):
+        for i in range(4):
+            reg[index + i] = 0x00
+        if power is 0:
+            reg[index + 3] = 0x10
+        elif power is 4096:
+            reg[index + 1] = 0x10
+        else:
+            reg[index + 2] = power & 0x00FF
+            reg[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
+        self.stop_spinning()
         x = self._gpio.readU8(0x01)
         x &= ~(1 << (self._group_num % 4))
         self._gpio.write8(0x01, x)
@@ -373,32 +526,52 @@ class Stepper(object):
         x = self._gpio.readU8(0x01)
         x |= (1 << (self._group_num % 4))
         self._gpio.write8(0x01, x)
+        if self._current_spin is None:
+            for i in range(4):
+                self._set_power(self._registers, i * 4, self._selected_states[self._current_state][i])
+            self._pwm.writeList(self._base_reg, self._registers)
+        elif self._current_spin == 'standard':
+            self.spin_standard(self._current_direction)
+        elif self._current_spin == 'torque':
+            self.spin_torque(self._current_direction)
+        elif self._current_spin == 'half':
+            self.spin_half(self._current_direction)
 
     def select_step_method(self, method):
         if method == 'standard':
+            self._current_method = method
             self._selected_states = self._standard_states
             self._selected_size = 4
+            self._current_state = self._current_state % 4
         elif method == 'torque':
+            self._current_method = method
             self._selected_states = self._torque_states
             self._selected_size = 4
+            self._current_state = self._current_state % 4
         elif method == 'half':
+            self._current_method = method
             self._selected_states = self._half_states
             self._selected_size = 8
         else:
-            print('Supported stepping methods are "full" and "half".')
+            print('Supported stepping methods are "full", "torque", and "half".')
+
+    def get_stepping_method(self):
+        return self._current_method
 
     def move_one_step(self, direction):
         if direction == 'CCW':
             for i in range(4):
-                self._i2c.write8(self._registers[i], self._selected_states[self._active_state][i])
-            self._active_state = (self._active_state + 1) % self._selected_size
+                self._set_power(self._registers, i*4, self._selected_states[self._current_state][i])
+            self._current_state = (self._current_state + 1) % self._selected_size
         elif direction == 'CW':
+            current_state_n = self._selected_size-1-self._current_state
             for i in range(4):
-                self._i2c.write8(self._registers[i], self._selected_states[self._selected_size - 1 - self._active_state][i])
-            self._active_state = (self._active_state + 1) % self._selected_size
+                self._set_power(self._registers, i*4, self._selected_states[current_state_n][i])
+            self._current_state = (self._current_state + 1) % self._selected_size
         else:
             print('Invalid direction, please use "CW" or "CCW"')
             return
+        self._pwm.writeList(self._base_reg, self._registers)
         sleep(1.0 / 2000.0)
 
     def move_num_steps(self, num_steps, direction):
@@ -406,59 +579,54 @@ class Stepper(object):
             self.move_one_step(direction)
 
     def stop_spinning(self):
-        self.suspend()
-        for i in range(16):
-            self._i2c.write8(0x06+i, 0x00)
-        self.resume()
+        self._current_spin = None
+        self._current_direction = None
+        for i in range(4):
+            self._set_power(self._base_reg, i*4, 0)
+        self._pwm.writeList(self._base_reg, self._registers)
 
     def spin_standard(self, direction):
-        load = [[0x00, 0x00, 0xFF, 0x03], [0x00, 0x08, 0xFF, 0x0B], [0x00, 0x04, 0xFF, 0x07], [0x00, 0x0C, 0xFF, 0x0F]]
-        reg = 6 + 16*(self._group_num % 4)
+        load = [0x00, 0x00, 0xFF, 0x03, 0x00, 0x08, 0xFF, 0x0B, 0x00, 0x04, 0xFF, 0x07, 0x00, 0x0C, 0xFF, 0x0F]
+        load_n = [0x00, 0x0C, 0xFF, 0x0F, 0x00, 0x04, 0xFF, 0x07, 0x00, 0x08, 0xFF, 0x0B, 0x00, 0x00, 0xFF, 0x03]
 
         if direction == 'CCW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[i//4][i % 4])
-            self.resume()
+            self._current_spin = 'standard'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load)
         elif direction == 'CW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[3-i//4][i % 4])
-            self.resume()
+            self._current_spin = 'standard'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load_n)
         else:
             print('Direction must be "CW" or "CCW".')
 
     def spin_torque(self, direction):
-        load = [[0x00, 0x00, 0xFF, 0x07], [0x00, 0x08, 0xFF, 0x0F], [0x00, 0x04, 0xFF, 0x0B], [0x00, 0x0C, 0xFF, 0x03]]
-        reg = 6 + 16*(self._group_num % 4)
+        load = [0x00, 0x00, 0xFF, 0x07, 0x00, 0x08, 0xFF, 0x0F, 0x00, 0x04, 0xFF, 0x0B, 0x00, 0x0C, 0xFF, 0x03]
+        load_n = [0x00, 0x0C, 0xFF, 0x03, 0x00, 0x04, 0xFF, 0x0B, 0x00, 0x08, 0xFF, 0x0F, 0x00, 0x00, 0xFF, 0x07]
 
         if direction == 'CCW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[i//4][i % 4])
-            self.resume()
+            self._current_spin = 'torque'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load)
         elif direction == 'CW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[3-i//4][i % 4])
-            self.resume()
+            self._current_spin = 'torque'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load_n)
         else:
             print('Direction must be "CW" or "CCW".')
 
     def spin_half(self, direction):
-        load = [[0x00, 0x0E, 0xFF, 0x03], [0x00, 0x06, 0xFF, 0x0B], [0x00, 0x02, 0xFF, 0x07], [0x00, 0x0A, 0xFF, 0x0F]]
-        reg = 6 + 16*(self._group_num % 4)
+        load = [0x00, 0x0E, 0xFF, 0x03, 0x00, 0x06, 0xFF, 0x0B, 0x00, 0x02, 0xFF, 0x07, 0x00, 0x0A, 0xFF, 0x0F]
+        load_n = [0x00, 0x0A, 0xFF, 0x0F, 0x00, 0x02, 0xFF, 0x07, 0x00, 0x06, 0xFF, 0x0B, 0x00, 0x0E, 0xFF, 0x03]
 
         if direction == 'CCW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[i//4][i % 4])
-            self.resume()
+            self._current_spin = 'half'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load)
         elif direction == 'CW':
-            self.suspend()
-            for i in range(16):
-                self._i2c.write8(reg+i, load[3-i//4][i % 4])
-            self.resume()
+            self._current_spin = 'half'
+            self._current_direction = direction
+            self._pwm.writeList(self._base_reg, load_n)
         else:
             print('Direction must be "CW" or "CCW".')
 
