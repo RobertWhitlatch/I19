@@ -461,7 +461,7 @@ void (*Task[4])(unsigned int);
 
 unsigned int Timer_Init(void (*task)(unsigned int), unsigned short period, unsigned int timer_num){
 
-    if(timer_num > 3) {
+    if(timer_num+1 > TIMERS_AVAILABLE_FOR_STEPPERS) {
         return(ERROR);
     }
     Task[timer_num] = task;
@@ -576,17 +576,17 @@ unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int nu
 unsigned int move_num_steps_nonblocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
     unsigned int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             return(ERROR);
         }
     }
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == 8){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     STEP(group).stepsRemaining = num_steps;
@@ -607,17 +607,17 @@ void move_one_step_continuous(unsigned int timer){
 unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSecond, int direction){
     CHECK(STEPPER)
     unsigned int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             return(ERROR);
         }
     }
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == 8){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     STEP(group).stepsPerSecond = stepsPerSecond;
@@ -630,12 +630,12 @@ unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSe
 unsigned int stop_continuous_stepper(unsigned int group){
     CHECK(STEPPER)
     int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     timersInUse[i] = 8;

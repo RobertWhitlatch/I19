@@ -25,9 +25,9 @@ int getValue(void){
 
 int validValueCheck(void){
     if(input_strlen == 0){
-        return(0);
+        return(1);
     }
-    return(1);
+    return(0);
 }
 
 void targetBoard(void){
