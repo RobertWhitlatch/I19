@@ -22,23 +22,23 @@
 #define HI_TORQUE 1
 #define HALF_STEPS 2
 
-#define LOWEST_FREQ 24 // Hz,
 #define STANDARD_FREQ 200 // Hz, Stepper speed severally hampered
 #define STEPPER_FOCUSED 1000 // Hz, Does not support Servos
 #define FASTEST_UPDATE 1526 // Hz, Use when only Brushed or Bridged
+// Note: the resultant frequency will likely not be exactly the given frequency, but it will be close
 
 #define BOARD_ZERO_STATUS   INSTALLED
-#define BOARD_ZERO_FREQ     FASTEST_UPDATE
+#define BOARD_ZERO_FREQ     STANDARD_FREQ
 
-#define GROUP_ZERO_STATUS   BRIDGED
-#define GROUP_ONE_STATUS    BRIDGED
-#define GROUP_TWO_STATUS    BRIDGED
-#define GROUP_THREE_STATUS  BRIDGED
+#define GROUP_ZERO_STATUS   SERVO
+#define GROUP_ONE_STATUS    NOT_IN_USE
+#define GROUP_TWO_STATUS    NOT_IN_USE
+#define GROUP_THREE_STATUS  NOT_IN_USE
 
-#define BOARD_ONE_STATUS    NOT_IN_USE
-#define BOARD_ONE_FREQ      NOT_IN_USE
+#define BOARD_ONE_STATUS    INSTALLED
+#define BOARD_ONE_FREQ      STEPPER_FOCUSED
 
-#define GROUP_FOUR_STATUS   NOT_IN_USE
+#define GROUP_FOUR_STATUS   STEPPER
 #define GROUP_FIVE_STATUS   NOT_IN_USE
 #define GROUP_SIX_STATUS    NOT_IN_USE
 #define GROUP_SEVEN_STATUS  NOT_IN_USE

@@ -160,6 +160,16 @@ void print_all(void){
     }
 }
 
+void printMotorDepot(void){
+    for(int i = 0; i < 2; i++){
+        fprintf(uart, "Board installed = %d\n", depot.board_status[i]);
+        fprintf(uart, "Frequency selected = %d\n", depot.freqUpdate[i]);
+        for(int j = 0; j < 4; j++){
+            fprintf(uart, "Group %d = %d\n", j, depot.group[j+i*4].status);
+        }
+    }
+}
+
 //>>>>>>>>>>>>>>>>Brushed<<<<<<<<<<<<<<<<<<<//
 
 unsigned int suspend_brushed(unsigned int group, unsigned int channel){
@@ -176,7 +186,7 @@ unsigned int resume_brushed(unsigned int group, unsigned int channel){
 
 unsigned int set_decay_brushed(unsigned int group, unsigned int channel, unsigned int decay, bool update){
     CHECK(BRUSHED)
-    if(decay != DECAY_FAST || decay != DECAY_SLOW){
+    if(decay != DECAY_FAST && decay != DECAY_SLOW){
         return(ERROR);
     }
     BRSH(group, channel).decay = decay;
@@ -200,7 +210,7 @@ unsigned int set_speed_brushed(unsigned int group, unsigned int channel, unsigne
 
 unsigned int set_direction_brushed(unsigned int group, unsigned int channel, int direction, bool update){
     CHECK(BRUSHED)
-    if(direction != DIRECTION_FORWARD || direction != DIRECTION_BACKWARD){
+    if(direction != DIRECTION_FORWARD && direction != DIRECTION_BACKWARD){
         return(ERROR);
     }
     BRSH(group, channel).direction = direction;
@@ -276,7 +286,7 @@ unsigned int resume_bridged(unsigned int group){
 
 unsigned int set_decay_bridged(unsigned int group, unsigned int decay, bool update){
     CHECK(BRIDGED)
-    if(decay != DECAY_FAST || decay != DECAY_SLOW){
+    if(decay != DECAY_FAST && decay != DECAY_SLOW){
         return(ERROR);
     }
     BRDG(group).decay = decay;
@@ -300,7 +310,7 @@ unsigned int set_speed_bridged(unsigned int group, unsigned int speed, bool upda
 
 unsigned int set_direction_bridged(unsigned int group, int direction, bool update){
     CHECK(BRIDGED)
-    if(direction != DIRECTION_FORWARD || direction != DIRECTION_BACKWARD){
+    if(direction != DIRECTION_FORWARD && direction != DIRECTION_BACKWARD){
         return(ERROR);
     }
     BRDG(group).direction = direction;

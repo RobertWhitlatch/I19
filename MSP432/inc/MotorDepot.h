@@ -16,6 +16,8 @@ void resume_all(void);
 
 void print_all(void);
 
+void printMotorDepot(void);
+
 //>>>>>>>>>>>>>>>>Brushed<<<<<<<<<<<<<<<<<<<//
 
 unsigned int suspend_brushed(unsigned int group, unsigned int channel);

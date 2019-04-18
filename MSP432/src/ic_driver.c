@@ -50,26 +50,50 @@ void enableDriver(unsigned int group){
 void initPWM(unsigned int* board, unsigned int* freq){
     uint8_t data;
     if(board[0]){
-//        if(24 <= freq[0] && freq[0] <= 1526){
-//            data = calculatePrescale(freq[0]);
-//            writeI2C(PWM_BASE, 0xFE, &data, 1);
-//        }
+        data = 0x80;
+        writeI2C(PWM_BASE, 0x00, &data, 1);
+        if(24 <= freq[0] && freq[0] <= 1526){
+            data = 0x31;
+            writeI2C(PWM_BASE, 0x00, &data, 1);
+            data = calculatePrescale(freq[0]);
+            writeI2C(PWM_BASE, 0xFE, &data, 1);
+        }
         data = 0x20;
         writeI2C(PWM_BASE, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 6; reg < 70; reg++){
-            writeI2C(PWM_BASE+1, reg, &data, 1);
+        for(uint8_t reg = 2; reg < 6; reg++){
+            writeI2C(PWM_BASE, reg, &data, 1);
+        }
+        for(uint8_t reg = 0x6; reg < 0x46; reg++){
+            if((reg-1) % 4 == 0){
+                data = 0x10;
+            } else {
+                data = 0x00;
+            }
+            writeI2C(PWM_BASE, reg, &data, 1);
         }
     }
     if(board[1]){
-//        if(24 <= freq[1] && freq[1] <= 1526){
-//            data = calculatePrescale(freq[1]);
-//            writeI2C(PWM_BASE+1, 0xFE, &data, 1);
-//        }
+        data = 0x80;
+        writeI2C(PWM_BASE+1, 0x00, &data, 1);
+        if(24 <= freq[1] && freq[1] <= 1526){
+            data = 0x31;
+            writeI2C(PWM_BASE+1,0x00, &data, 1);
+            data = calculatePrescale(freq[1]);
+            writeI2C(PWM_BASE+1, 0xFE, &data, 1);
+        }
         data = 0x20;
         writeI2C(PWM_BASE+1, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 6; reg < 70; reg++){
+        for(uint8_t reg = 2; reg < 6; reg++){
+            writeI2C(PWM_BASE+1, reg, &data, 1);
+        }
+        for(uint8_t reg = 0x06; reg < 0x46; reg++){
+            if((reg-1) % 4 == 0){
+                data = 0x10;
+            } else {
+                data = 0x00;
+            }
             writeI2C(PWM_BASE+1, reg, &data, 1);
         }
     }
