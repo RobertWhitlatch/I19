@@ -15,17 +15,21 @@ void disableDriver(unsigned int group);
 
 void enableDriver(unsigned int group);
 
-void initPWM(unsigned int* board);
+void initPWM(unsigned int* board, unsigned int* freq);
 
 unsigned int enablePWM(unsigned int board);
 
 void disablePWM(unsigned int board);
 
-void setLine(unsigned int group, unsigned int line, unsigned int power);
+void setServo(unsigned int group, unsigned int line, unsigned int power);
 
-void setChannel(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2);
+void setBrushed(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2);
 
-void setGroup(unsigned int group, const unsigned int* powers);
+void setBridged(unsigned int group, unsigned int power1, unsigned int power2);
+
+void setStepper(unsigned int group, const unsigned int* powers);
+
+unsigned int calculatePrescale(unsigned int freq);
 
 void print_gpio_registers(unsigned int board);
 

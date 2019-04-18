@@ -16,6 +16,8 @@ void resume_all(void);
 
 void print_all(void);
 
+void printMotorDepot(void);
+
 //>>>>>>>>>>>>>>>>Brushed<<<<<<<<<<<<<<<<<<<//
 
 unsigned int suspend_brushed(unsigned int group, unsigned int channel);
@@ -33,6 +35,24 @@ unsigned int set_velocity_brushed(unsigned int group, unsigned int channel, int 
 unsigned int set_all_brushed(unsigned int group, unsigned int channel, unsigned int decay, int direction, unsigned int speed, bool update);
 
 unsigned int update_brushed(unsigned int group, unsigned int channel);
+
+//>>>>>>>>>>>>>>>>Bridged<<<<<<<<<<<<<<<<<<<//
+
+unsigned int suspend_bridged(unsigned int group);
+
+unsigned int resume_bridged(unsigned int group);
+
+unsigned int set_decay_bridged(unsigned int group, unsigned int decay, bool update);
+
+unsigned int set_speed_bridged(unsigned int group, unsigned int speed, bool update);
+
+unsigned int set_direction_bridged(unsigned int group, int direction, bool update);
+
+unsigned int set_velocity_bridged(unsigned int group, int velocity, bool update);
+
+unsigned int set_all_bridged(unsigned int group, unsigned int decay, int direction, unsigned int speed, bool update);
+
+unsigned int update_bridged(unsigned int group);
 
 //>>>>>>>>>>>>>>>>>Servo<<<<<<<<<<<<<<<<<<<<//
 

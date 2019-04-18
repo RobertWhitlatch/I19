@@ -1,6 +1,7 @@
 #include "Master.h"
 
 #define BRSH(x,y) depot.group[(x)].config.brushed[(y)]
+#define BRDG(x) depot.group[(x)].config.bridged
 #define SRV(x,y) depot.group[(x)].config.servo[(y)]
 #define STEP(x) depot.group[(x)].config.stepper
 
@@ -15,6 +16,13 @@ typedef struct Brushed_Config{
     unsigned int decay;
 }Brushed_t;
 #define BRUSHED_SIZE sizeof(Brushed_t)*2
+
+typedef struct Bridged_Config{
+    unsigned int speed;
+             int direction;
+    unsigned int decay;
+}Bridged_t;
+#define BRIDGED_SIZE sizeof(Bridged_t)
 
 typedef struct Servo_Config{
     unsigned int position;
@@ -36,6 +44,7 @@ typedef struct Stepper_Config{
 typedef union Group_Config{
     unsigned int  buff[SERVO_SIZE];
     Brushed_t brushed[2];
+    Bridged_t bridged;
     Servo_t   servo[4];
     Stepper_t stepper;
 }GroupConfig_t;
@@ -48,12 +57,17 @@ typedef struct Group_Master{
 typedef struct MotorDepot_Config{
     unsigned int board_status[2];
     Group_t  group[8];
+    unsigned int freqUpdate[2];
 }MotorDepot_t;
 
 MotorDepot_t depot = {
     .board_status = {
         BOARD_ZERO_STATUS,
         BOARD_ONE_STATUS,
+    },
+    .freqUpdate = {
+        BOARD_ZERO_FREQ,
+        BOARD_ONE_FREQ,
     },
     .group = {
         {.status = GROUP_ZERO_STATUS, },
@@ -64,10 +78,8 @@ MotorDepot_t depot = {
         {.status = GROUP_FIVE_STATUS, },
         {.status = GROUP_SIX_STATUS, },
         {.status = GROUP_SEVEN_STATUS, },
-    }
+    },
 };
-
-
 
 unsigned int CS_getMCLK(void);
 unsigned int clockHz;
@@ -78,31 +90,37 @@ void MotorDepot_Init(void){
     clockHz = CS_getMCLK();
     initI2C();
     initGPIO(depot.board_status);
-    initPWM(depot.board_status);
+    initPWM(depot.board_status, depot.freqUpdate);
     for(int i = 0; i < 8; i++){
         if(depot.group[i].status == BRUSHED){
             enableDriver(i);
             for(int j = 0; j < 2; i++){
-                depot.group[i].config.brushed[j].direction = DIRECTION_FORWARD;
-                depot.group[i].config.brushed[j].decay = DECAY_FAST;
-                depot.group[i].config.brushed[j].speed = 0;
+                BRSH(i,j).direction = DIRECTION_FORWARD;
+                BRSH(i,j).decay = DECAY_FAST;
+                BRSH(i,j).speed = 0;
             }
+        }
+        if(depot.group[i].status == BRIDGED){
+            enableDriver(i);
+            BRDG(i).direction = DIRECTION_FORWARD;
+            BRDG(i).decay = DECAY_FAST;
+            BRDG(i).speed = 0;
         }
         if(depot.group[i].status == SERVO){
             for(int j = 0; j < 4; j++){
-                depot.group[i].config.servo[j].lowerBound = 410;
-                depot.group[i].config.servo[j].position = 1230;
-                depot.group[i].config.servo[j].upperBound = 2048;
+                SRV(i,j).lowerBound = 410;
+                SRV(i,j).position = 1230;
+                SRV(i,j).upperBound = 2048;
             }
         }
         if(depot.group[i].status == STEPPER){
             enableDriver(i);
-            depot.group[i].config.stepper.method = STANDARD;
-            depot.group[i].config.stepper.methodSize = 4;
-            depot.group[i].config.stepper.state = 0;
-            depot.group[i].config.stepper.direction = DIRECTION_FORWARD;
-            depot.group[i].config.stepper.stepsPerSecond = 0;
-            depot.group[i].config.stepper.stepsRemaining = 0;
+            STEP(i).method = STANDARD;
+            STEP(i).methodSize = 4;
+            STEP(i).state = 0;
+            STEP(i).direction = DIRECTION_FORWARD;
+            STEP(i).stepsPerSecond = 0;
+            STEP(i).stepsRemaining = 0;
         }
     }
 }
@@ -125,6 +143,8 @@ void resume_all(void){
     }
 }
 
+
+
 void print_all(void){
     if(depot.board_status[0]){
         print_gpio_registers(0);
@@ -140,11 +160,21 @@ void print_all(void){
     }
 }
 
+void printMotorDepot(void){
+    for(int i = 0; i < 2; i++){
+        fprintf(uart, "Board installed = %d\n", depot.board_status[i]);
+        fprintf(uart, "Frequency selected = %d\n", depot.freqUpdate[i]);
+        for(int j = 0; j < 4; j++){
+            fprintf(uart, "Group %d = %d\n", j, depot.group[j+i*4].status);
+        }
+    }
+}
+
 //>>>>>>>>>>>>>>>>Brushed<<<<<<<<<<<<<<<<<<<//
 
 unsigned int suspend_brushed(unsigned int group, unsigned int channel){
     CHECK(BRUSHED)
-    setChannel(group, channel, FULL_OFF, FULL_OFF);
+    setBrushed(group, channel, FULL_OFF, FULL_OFF);
     return(NO_ERROR);
 }
 
@@ -156,7 +186,7 @@ unsigned int resume_brushed(unsigned int group, unsigned int channel){
 
 unsigned int set_decay_brushed(unsigned int group, unsigned int channel, unsigned int decay, bool update){
     CHECK(BRUSHED)
-    if(decay != DECAY_FAST || decay != DECAY_SLOW){
+    if(decay != DECAY_FAST && decay != DECAY_SLOW){
         return(ERROR);
     }
     BRSH(group, channel).decay = decay;
@@ -180,7 +210,7 @@ unsigned int set_speed_brushed(unsigned int group, unsigned int channel, unsigne
 
 unsigned int set_direction_brushed(unsigned int group, unsigned int channel, int direction, bool update){
     CHECK(BRUSHED)
-    if(direction != DIRECTION_FORWARD || direction != DIRECTION_BACKWARD){
+    if(direction != DIRECTION_FORWARD && direction != DIRECTION_BACKWARD){
         return(ERROR);
     }
     BRSH(group, channel).direction = direction;
@@ -220,21 +250,121 @@ unsigned int set_all_brushed(unsigned int group, unsigned int channel, unsigned 
 unsigned int update_brushed(unsigned int group, unsigned int channel){
     CHECK(BRUSHED)
     if(BRSH(group,channel).speed == 0){
-        setChannel(group,channel,0,0);
+        setBrushed(group, channel, FULL_OFF, FULL_OFF);
     }
     if(BRSH(group,channel).direction == DIRECTION_FORWARD){
         if(BRSH(group,channel).decay == DECAY_FAST){
-            setChannel(group, channel, BRSH(group,channel).speed, FULL_OFF);
+            setBrushed(group, channel, BRSH(group,channel).speed, FULL_OFF);
         }else{ // DECAY_SLOW
             int speed_n = 4096 - BRSH(group,channel).speed;
-            setChannel(group, channel, FULL_ON, speed_n);
+            setBrushed(group, channel, FULL_ON, speed_n);
         }
     }else{ // DIRECTION_BACKWARD
         if(BRSH(group,channel).decay == DECAY_FAST){
-            setChannel(group, channel, FULL_OFF, BRSH(group, channel).speed);
+            setBrushed(group, channel, FULL_OFF, BRSH(group, channel).speed);
         }else{ // DECAY_SLOW
             int speed_n = 4096 - BRSH(group,channel).speed;
-            setChannel(group, channel, speed_n, FULL_ON);
+            setBrushed(group, channel, speed_n, FULL_ON);
+        }
+    }
+    return(NO_ERROR);
+}
+
+//>>>>>>>>>>>>>>>>Bridged<<<<<<<<<<<<<<<<<<<//
+
+unsigned int suspend_bridged(unsigned int group){
+    CHECK(BRIDGED)
+    disableDriver(group);
+    return(NO_ERROR);
+}
+
+unsigned int resume_bridged(unsigned int group){
+    CHECK(BRIDGED)
+    enableDriver(group);
+    return(NO_ERROR);
+}
+
+unsigned int set_decay_bridged(unsigned int group, unsigned int decay, bool update){
+    CHECK(BRIDGED)
+    if(decay != DECAY_FAST && decay != DECAY_SLOW){
+        return(ERROR);
+    }
+    BRDG(group).decay = decay;
+    if(update){
+        update_bridged(group);
+    }
+    return(NO_ERROR);
+}
+
+unsigned int set_speed_bridged(unsigned int group, unsigned int speed, bool update){
+    CHECK(BRIDGED)
+    if(speed > FULL_ON){
+        return(ERROR);
+    }
+    BRDG(group).speed = speed;
+    if(update){
+        update_bridged(group);
+    }
+    return(NO_ERROR);
+}
+
+unsigned int set_direction_bridged(unsigned int group, int direction, bool update){
+    CHECK(BRIDGED)
+    if(direction != DIRECTION_FORWARD && direction != DIRECTION_BACKWARD){
+        return(ERROR);
+    }
+    BRDG(group).direction = direction;
+    if(update){
+        update_bridged(group);
+    }
+    return(NO_ERROR);
+}
+
+unsigned int set_velocity_bridged(unsigned int group, int velocity, bool update){
+    CHECK(BRIDGED)
+    int direction = (direction < 0) ? DIRECTION_BACKWARD : DIRECTION_FORWARD;
+    velocity *= direction;
+    if(velocity > FULL_ON){
+        return(ERROR);
+    }
+    BRDG(group).direction = direction;
+    BRDG(group).speed = velocity;
+    if(update){
+        update_bridged(group);
+    }
+    return(NO_ERROR);
+}
+
+unsigned int set_all_bridged(unsigned int group, unsigned int decay, int direction, unsigned int speed, bool update){
+    CHECK(BRIDGED)
+    int check = 0;
+    check += set_decay_bridged(group, decay, false);
+    check += set_direction_bridged(group, direction, false);
+    check += set_speed_bridged(group, speed, false);
+    if(update){
+        check += update_bridged(group);
+    }
+    return((check == 0) ? NO_ERROR : ERROR);
+}
+
+unsigned int update_bridged(unsigned int group){
+    CHECK(BRIDGED)
+    if(BRDG(group).speed == 0){
+        setBridged(group, FULL_OFF, FULL_OFF);
+    }
+    if(BRDG(group).direction == DIRECTION_FORWARD){
+        if(BRDG(group).decay == DECAY_FAST){
+            setBridged(group, BRDG(group).speed, FULL_OFF);
+        }else{ // DECAY_SLOW
+            int speed_n = 4096 - BRDG(group).speed;
+            setBridged(group, FULL_ON, speed_n);
+        }
+    }else{ // DIRECTION_BACKWARD
+        if(BRDG(group).decay == DECAY_FAST){
+            setBridged(group, FULL_OFF, BRDG(group).speed);
+        }else{ // DECAY_SLOW
+            int speed_n = 4096 - BRDG(group).speed;
+            setBridged(group, speed_n, FULL_ON);
         }
     }
     return(NO_ERROR);
@@ -244,13 +374,13 @@ unsigned int update_brushed(unsigned int group, unsigned int channel){
 
 unsigned int suspend_servo(unsigned int group, unsigned int line){
     CHECK(SERVO)
-    setLine(group, line, FULL_OFF);
+    setServo(group, line, FULL_OFF);
     return(NO_ERROR);
 }
 
 unsigned int resume_servo(unsigned int group, unsigned int line){
     CHECK(SERVO)
-    setLine(group, line, SRV(group,line).position);
+    setServo(group, line, SRV(group,line).position);
     return(NO_ERROR);
 }
 
@@ -271,7 +401,7 @@ unsigned int set_position_servo(unsigned int group, unsigned int line, unsigned 
     CHECK(SERVO)
     if(SRV(group,line).lowerBound <= position && position <= SRV(group,line).upperBound){
         SRV(group,line).position = position;
-        setLine(group, line, SRV(group,line).position);
+        setServo(group, line, SRV(group,line).position);
         return(NO_ERROR);
     }
     return(ERROR);
@@ -281,26 +411,26 @@ unsigned int set_position_servo(unsigned int group, unsigned int line, unsigned 
 
 const unsigned int states[3][8][4] = {
     { // STANDARD
-        {FULL_ON,  FULL_OFF, FULL_OFF, FULL_OFF},
-        {FULL_OFF, FULL_OFF, FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_OFF, FULL_OFF},
-        {FULL_OFF, FULL_OFF, FULL_OFF,  FULL_ON},
+        {0x10, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x10, 0x00},
+        {0x00, 0x10, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x10},
     },
     { // HI_TORQUE
-        {FULL_ON,  FULL_OFF, FULL_OFF, FULL_ON },
-        {FULL_ON,  FULL_OFF, FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_OFF, FULL_ON },
+        {0x10, 0x00, 0x00, 0x10},
+        {0x10, 0x00, 0x10, 0x00},
+        {0x00, 0x10, 0x10, 0x00},
+        {0x00, 0x10, 0x00, 0x10},
     },
     { // HALF_STEPS
-        {FULL_ON,  FULL_OFF, FULL_OFF, FULL_OFF},
-        {FULL_ON,  FULL_OFF, FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_OFF, FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_ON,  FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_OFF, FULL_OFF},
-        {FULL_OFF, FULL_ON,  FULL_OFF, FULL_ON },
-        {FULL_OFF, FULL_OFF, FULL_OFF, FULL_ON },
-        {FULL_ON,  FULL_OFF, FULL_OFF, FULL_ON },
+        {0x10, 0x00, 0x00, 0x00},
+        {0x10, 0x00, 0x10, 0x00},
+        {0x00, 0x00, 0x10, 0x00},
+        {0x00, 0x10, 0x10, 0x00},
+        {0x00, 0x10, 0x00, 0x00},
+        {0x00, 0x10, 0x00, 0x10},
+        {0x00, 0x00, 0x00, 0x10},
+        {0x10, 0x00, 0x00, 0x10},
     }
 };
 
@@ -331,7 +461,7 @@ void (*Task[4])(unsigned int);
 
 unsigned int Timer_Init(void (*task)(unsigned int), unsigned short period, unsigned int timer_num){
 
-    if(timer_num > 3) {
+    if(timer_num+1 > TIMERS_AVAILABLE_FOR_STEPPERS) {
         return(ERROR);
     }
     Task[timer_num] = task;
@@ -414,7 +544,7 @@ unsigned int select_method_stepper(unsigned int group, unsigned int method){
 
 unsigned int move_one_step_stepper(unsigned int group, int direction, bool wait){
     CHECK(STEPPER)
-    setGroup(group,STEPPER_STATE);
+    setStepper(group,STEPPER_STATE);
     ADVANCE_STATE
     if (wait){
         unsigned int j = clockHz/500;
@@ -426,7 +556,7 @@ unsigned int move_one_step_stepper(unsigned int group, int direction, bool wait)
 void move_one_step_timer(unsigned int timer){
     unsigned int group = timersInUse[timer];
     int direction = STEP(group).direction;
-    setGroup(group,STEPPER_STATE);
+    setStepper(group,STEPPER_STATE);
     ADVANCE_STATE
     STEP(group).stepsRemaining--;
     if(STEP(group).stepsRemaining == 0){
@@ -437,11 +567,8 @@ void move_one_step_timer(unsigned int timer){
 
 unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
-    if(STEP(group).methodSize == 8){
-        num_steps *= 2;
-    }
     for(int i = 0; i < num_steps; i++){
-        move_one_step_stepper(group,direction, true);
+        move_one_step_stepper(group, direction, true);
     }
     return(NO_ERROR);
 }
@@ -449,17 +576,17 @@ unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int nu
 unsigned int move_num_steps_nonblocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
     unsigned int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             return(ERROR);
         }
     }
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == 8){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     STEP(group).stepsRemaining = num_steps;
@@ -473,24 +600,24 @@ unsigned int move_num_steps_nonblocking_stepper(unsigned int group, unsigned int
 void move_one_step_continuous(unsigned int timer){
     unsigned int group = timersInUse[timer];
     int direction = STEP(group).direction;
-    setGroup(group,STEPPER_STATE);
+    setStepper(group,STEPPER_STATE);
     ADVANCE_STATE
 }
 
 unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSecond, int direction){
     CHECK(STEPPER)
     unsigned int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             return(ERROR);
         }
     }
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == 8){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     STEP(group).stepsPerSecond = stepsPerSecond;
@@ -503,12 +630,12 @@ unsigned int move_continuous_stepper(unsigned int group, unsigned int stepsPerSe
 unsigned int stop_continuous_stepper(unsigned int group){
     CHECK(STEPPER)
     int i;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < TIMERS_AVAILABLE_FOR_STEPPERS; i++){
         if(timersInUse[i] == group){
             break;
         }
     }
-    if(i == 4){
+    if(i == TIMERS_AVAILABLE_FOR_STEPPERS){
         return(ERROR);
     }
     timersInUse[i] = 8;
