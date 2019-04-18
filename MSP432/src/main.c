@@ -9,17 +9,24 @@ int input_strlen;
 uint8_t reg;
 uint8_t value;
 uint8_t data;
+uint16_t input;
 uint8_t method = 0;
 uint8_t board;
 uint8_t group;
 uint8_t channel;
 uint8_t line;
 
-
 int getValue(void){
     while((input_strlen = getString(in_string,STRING_BUFF_SIZE)) == EOF);
     fprintf(uart, "\n");
     return(atoi(in_string));
+}
+
+int validValueCheck(void){
+    if(input_strlen == 0){
+        return(0);
+    }
+    return(1);
 }
 
 void targetBoard(void){
@@ -57,7 +64,9 @@ int main(void){
                 case 'b':
                     fprintf(uart, "Welcome to the Brushed Menu!\n");
                     targetGroup();
+                    if(validValueCheck()) break;
                     targetChannel();
+                    if(validValueCheck()) break;
                     fprintf(uart, "Brushed>");
                     while(1){
                         if((in_char = fgetc(uart)) > -1){
@@ -65,7 +74,9 @@ int main(void){
                             switch(in_char){
                                 case 'x':
                                     targetGroup();
+                                    if(validValueCheck()) break;
                                     targetChannel();
+                                    if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
@@ -90,25 +101,54 @@ int main(void){
                 case 'd':
                     fprintf(uart, "Welcome to Bridged Menu!\n");
                     targetGroup();
+                    if(validValueCheck()) break;
                     fprintf(uart, "Bridged>");
                     while(1){
                         if((in_char = fgetc(uart)) > -1){
                             fprintf(uart, "%c\n", in_char);
                             switch(in_char){
                                 case '1':
-                                    set_all_bridged(0, DECAY_FAST, DIRECTION_FORWARD, 2048, true);
+                                    fprintf(uart, "Enter power value. (0-4096)\nBridged>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d Forward with Fast Decay at power %d\n", group, input);
+                                    set_all_bridged(group, DECAY_FAST, DIRECTION_FORWARD, input, true);
                                     break;
                                 case '2':
-                                    set_all_bridged(0, DECAY_FAST, DIRECTION_BACKWARD, 2048, true);
+                                    fprintf(uart, "Enter power value. (0-4096)\nBridged>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d Forward with Slow Decay at power %d\n", group, input);
+                                    set_all_bridged(group, DECAY_SLOW, DIRECTION_FORWARD, input, true);
                                     break;
-                                case '5':
-                                    set_speed_bridged(0, 0, true);
+                                case '3':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBridged>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d Backward with Fast Decay at power %d\n", group, input);
+                                    set_all_bridged(group, DECAY_FAST, DIRECTION_BACKWARD, input, true);
+                                    break;
+                                case '4':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBridged>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d Backward with Slow Decay at power %d\n", group, input);
+                                    set_all_bridged(group, DECAY_SLOW, DIRECTION_BACKWARD, input, true);
+                                    break;
+                                case '0':
+                                    set_speed_bridged(group, 0, true);
                                     break;
                                 case 'x':
                                     targetGroup();
+                                    if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
+                                    fprintf(uart, "1 - Fire Motor Forward with Fast Decay\n");
+                                    fprintf(uart, "2 - Fire Motor Forward with Slow Decay\n");
+                                    fprintf(uart, "3 - Fire Motor Backward with Fast Decay\n");
+                                    fprintf(uart, "4 - Fire Motor Backward with Slow Decay\n");
+                                    fprintf(uart, "0 - Stop Motor\n");
                                     fprintf(uart, "x - Retarget\n");
                                     fprintf(uart, "h - Help\n");
                                     fprintf(uart, "q - Return to Main Menu\n");
@@ -130,7 +170,9 @@ int main(void){
                 case 's':
                     fprintf(uart, "Welcome to the Servo Menu!\n");
                     targetGroup();
+                    if(validValueCheck()) break;
                     targetLine();
+                    if(validValueCheck()) break;
                     fprintf(uart, "Servo>");
                     while(1){
                         if((in_char = fgetc(uart)) > -1){
@@ -138,7 +180,9 @@ int main(void){
                             switch(in_char){
                                 case 'x':
                                     targetGroup();
+                                    if(validValueCheck()) break;
                                     targetLine();
+                                    if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
@@ -163,6 +207,7 @@ int main(void){
                 case 't':
                     fprintf(uart, "Welcome to the Stepper Menu!\n");
                     targetGroup();
+                    if(validValueCheck()) break;
                     fprintf(uart, "Stepper>");
                     while(1){
                         if((in_char = fgetc(uart)) > -1){
@@ -170,6 +215,7 @@ int main(void){
                             switch(in_char){
                                 case 'x':
                                     targetGroup();
+                                    if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
@@ -194,6 +240,7 @@ int main(void){
                 case 'x':
                     fprintf(uart, "Welcome to the Register Menu!\n");
                     targetBoard();
+                    if(validValueCheck()) break;
                     fprintf(uart, "Register>");
                     while(1){
                         if((in_char = fgetc(uart)) > -1){
@@ -208,8 +255,10 @@ int main(void){
                                 case '3':
                                     fprintf(uart, "Enter GPIO register to write (0-3)\n>");
                                     reg = getValue();
+                                    if(validValueCheck()) break;
                                     fprintf(uart, "Enter value to write (0-255)\n>");
                                     value = getValue();
+                                    if(validValueCheck()) break;
                                     if(writeI2C(0x20+board, reg, &value, 1)){
                                         fprintf(uart, "Write successful\n");
                                     }else{
@@ -219,8 +268,10 @@ int main(void){
                                 case '4':
                                     fprintf(uart, "Enter PWM register to write (0-69, 250-255)\n>");
                                     reg = getValue();
+                                    if(validValueCheck()) break;
                                     fprintf(uart, "Enter value to write (0-255)\n>");
                                     value = getValue();
+                                    if(validValueCheck()) break;
                                     if(writeI2C(0x40+board, reg, &value, 1)){
                                         fprintf(uart, "Write successful\n");
                                     }else{
@@ -229,6 +280,7 @@ int main(void){
                                     break;
                                 case 'x':
                                     targetBoard();
+                                    if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
