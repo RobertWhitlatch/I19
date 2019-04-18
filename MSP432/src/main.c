@@ -72,6 +72,37 @@ int main(void){
                         if((in_char = fgetc(uart)) > -1){
                             fprintf(uart, "%c\n", in_char);
                             switch(in_char){
+                                case '1':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBrushed>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d, Channel %d Forward with Fast Decay at power %d\n", group, channel, input);
+                                    set_all_brushed(group, channel, DECAY_FAST, DIRECTION_FORWARD, input, true);
+                                    break;
+                                case '2':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBrushed>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d, Channel %d Forward with Slow Decay at power %d\n", group, channel, input);
+                                    set_all_brushed(group, channel, DECAY_SLOW, DIRECTION_FORWARD, input, true);
+                                    break;
+                                case '3':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBrushed>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d, Channel %d Backward with Fast Decay at power %d\n", group, channel, input);
+                                    set_all_brushed(group, channel, DECAY_FAST, DIRECTION_BACKWARD, input, true);
+                                    break;
+                                case '4':
+                                    fprintf(uart, "Enter power value. (0-4096)\nBrushed>");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 4096) break;
+                                    fprintf(uart, "Firing Group %d, Channel %d Backward with Slow Decay at power %d\n", group, channel, input);
+                                    set_all_brushed(group, channel, DECAY_SLOW, DIRECTION_BACKWARD, input, true);
+                                    break;
+                                case '0':
+                                    set_speed_brushed(group, channel, 0, true);
+                                    break;
                                 case 'x':
                                     targetGroup();
                                     if(validValueCheck()) break;
@@ -80,6 +111,11 @@ int main(void){
                                     break;
                                 case 'h':
                                 case 'H':
+                                    fprintf(uart, "1 - Fire Motor Forward with Fast Decay\n");
+                                    fprintf(uart, "2 - Fire Motor Forward with Slow Decay\n");
+                                    fprintf(uart, "3 - Fire Motor Backward with Fast Decay\n");
+                                    fprintf(uart, "4 - Fire Motor Backward with Slow Decay\n");
+                                    fprintf(uart, "0 - Stop Motor\n");
                                     fprintf(uart, "x - Retarget\n");
                                     fprintf(uart, "h - Help\n");
                                     fprintf(uart, "q - Return to Main Menu\n");
