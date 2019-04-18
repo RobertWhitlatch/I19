@@ -567,11 +567,8 @@ void move_one_step_timer(unsigned int timer){
 
 unsigned int move_num_steps_blocking_stepper(unsigned int group, unsigned int num_steps, int direction){
     CHECK(STEPPER)
-    if(STEP(group).methodSize == 8){
-        num_steps *= 2;
-    }
     for(int i = 0; i < num_steps; i++){
-        move_one_step_stepper(group,direction, true);
+        move_one_step_stepper(group, direction, true);
     }
     return(NO_ERROR);
 }

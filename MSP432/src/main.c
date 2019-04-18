@@ -9,7 +9,8 @@ int input_strlen;
 uint8_t reg;
 uint8_t value;
 uint8_t data;
-uint16_t input;
+uint32_t input;
+uint32_t input2;
 uint8_t method = 0;
 uint8_t board;
 uint8_t group;
@@ -214,6 +215,26 @@ int main(void){
                         if((in_char = fgetc(uart)) > -1){
                             fprintf(uart, "%c\n", in_char);
                             switch(in_char){
+                                case 'b':
+                                    fprintf(uart, "Enter lower bound for servo. (410-2048)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input < 410 || input > 2048) break;
+                                    fprintf(uart, "Enter upper bound for servo. (410-2048)\n");
+                                    input2 = getValue();
+                                    if(validValueCheck() || input2 < 410 || input2 > 2048) break;
+                                    set_bounds_servo(group, line, input, input2);
+                                    break;
+                                case 'p':
+                                    fprintf(uart, "Enter new position for servo. (410-2048, or between values custom bounds values)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input < 410 || input > 2048) break;
+                                    set_position_servo(group, line, input);
+                                    break;
+                                case 's':
+                                    set_position_servo(group, line, 410);
+                                    for(int i = 0; i < 10000; i++);
+                                    set_position_servo(group, line, 2048);
+                                    break;
                                 case 'x':
                                     targetGroup();
                                     if(validValueCheck()) break;
@@ -222,6 +243,9 @@ int main(void){
                                     break;
                                 case 'h':
                                 case 'H':
+                                    fprintf(uart, "b - Set Bounds for Servo\n");
+                                    fprintf(uart, "p - Set Position for Servo\n");
+                                    fprintf(uart, "s - Sweep Servo\n");
                                     fprintf(uart, "x - Retarget\n");
                                     fprintf(uart, "h - Help\n");
                                     fprintf(uart, "q - Return to Main Menu\n");
@@ -249,12 +273,70 @@ int main(void){
                         if((in_char = fgetc(uart)) > -1){
                             fprintf(uart, "%c\n", in_char);
                             switch(in_char){
+                                case '1':
+                                    fprintf(uart, "Enter number of steps to move. (1-65535)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 0xFFFF) break;
+                                    move_num_steps_blocking_stepper(group, input, DIRECTION_FORWARD);
+                                    break;
+                                case '2':
+                                    fprintf(uart, "Enter number of steps to move. (1-65535)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 0xFFFF) break;
+                                    move_num_steps_blocking_stepper(group, input, DIRECTION_BACKWARD);
+                                    break;
+                                case '3':
+                                    fprintf(uart, "Enter number of steps to move. (1-65535)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 0xFFFF) break;
+                                    move_num_steps_nonblocking_stepper(group, input, DIRECTION_FORWARD);
+                                    break;
+                                case '4':
+                                    fprintf(uart, "Enter number of steps to move. (1-65535)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 0xFFFF) break;
+                                    move_num_steps_nonblocking_stepper(group, input, DIRECTION_BACKWARD);
+                                    break;
+                                case '5':
+                                    fprintf(uart, "Enter number of steps per second to rotate. (1-1000)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 1000) break;
+                                    move_num_steps_blocking_stepper(group, input, DIRECTION_FORWARD);
+                                    break;
+                                case '6':
+                                    fprintf(uart, "Enter number of steps per second to rotate. (1-1000)\n");
+                                    input = getValue();
+                                    if(validValueCheck() || input > 1000) break;
+                                    move_num_steps_blocking_stepper(group, input, DIRECTION_FORWARD);
+                                    break;
+                                case '7':
+                                    select_method_stepper(group, STANDARD);
+                                    break;
+                                case '8':
+                                    select_method_stepper(group, HI_TORQUE);
+                                    break;
+                                case '9':
+                                    select_method_stepper(group, HALF_STEPS);
+                                    break;
+                                case '0':
+                                    stop_continuous_stepper(group);
+                                    break;
                                 case 'x':
                                     targetGroup();
                                     if(validValueCheck()) break;
                                     break;
                                 case 'h':
                                 case 'H':
+                                    fprintf(uart, "1 - Move Stepper X Steps CW (blocking)\n");
+                                    fprintf(uart, "2 - Move Stepper X Steps CCW (blocking)\n");
+                                    fprintf(uart, "3 - Move Stepper X Steps CW (non-blocking)\n");
+                                    fprintf(uart, "4 - Move Stepper X Steps CCW (non-blocking)\n");
+                                    fprintf(uart, "5 - Move Stepper continuously CW (non-blocking)\n");
+                                    fprintf(uart, "6 - Move Stepper continuously CCW (non-blocking)\n");
+                                    fprintf(uart, "7 - Set Stepping method to Standard\n");
+                                    fprintf(uart, "8 - Set Stepping method to Hi-Torque\n");
+                                    fprintf(uart, "9 - Set Stepping method to Half-Stepping\n");
+                                    fprintf(uart, "0 - Stop Stepper Motor\n");
                                     fprintf(uart, "x - Retarget\n");
                                     fprintf(uart, "h - Help\n");
                                     fprintf(uart, "q - Return to Main Menu\n");
