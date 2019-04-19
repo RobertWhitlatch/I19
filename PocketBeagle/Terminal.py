@@ -107,13 +107,13 @@ def servo_menu(servo_depot):
     while True:
         command = input('Servo>')
         if command == '1':
-            x = value_valid(int(input('Specify the lower limit of the Servo\'s range. [410-2048]')), 410, 2048)
-            y = value_valid(int(input('Specify the upper limit of the Servo\'s range. [' + str(x) + '-2048]')), x, 2048)
+            x = value_valid(int(input('Specify the lower limit of the Servo\'s range. [410-2048]\n>')), 410, 2048)
+            y = value_valid(int(input('Specify the upper limit of the Servo\'s range. [' + str(x) + '-2048]\n>')), x, 2048)
             servo_list[servo_line].set_bounds(x, y)
         elif command == '2':
             a = servo_list[servo_line].get_lower()
             b = servo_list[servo_line].get_upper()
-            x = value_valid(int(input('Specify new position for Servo. (' + str(a) + '-' + str(b) + ')')), a, b)
+            x = value_valid(int(input('Specify new position for Servo. (' + str(a) + '-' + str(b) + ')\n>')), a, b)
             servo_list[servo_line].set_position(x)
         elif command == '3':
             a = servo_list[servo_line].get_lower()
@@ -149,10 +149,10 @@ def stepper_menu(stepper_depot):
     while True:
         command = input('Stepper>')
         if command == '1':
-            x = value_valid(int(input('Specify number of steps to move Stepper. [1-65535]')), 1, 65535)
+            x = value_valid(int(input('Specify number of steps to move Stepper. [1-65535]\n>')), 1, 65535)
             stepper_list[0].move_num_steps(x, 'CW')
         elif command == '2':
-            x = value_valid(int(input('Specify number of steps to move Stepper. [1-65535]')), 1, 65535)
+            x = value_valid(int(input('Specify number of steps to move Stepper. [1-65535]\n>')), 1, 65535)
             stepper_list[0].move_num_steps(x, 'CCW')
         elif command == '3':
             x = stepper_list[0].get_stepping_method()
@@ -252,13 +252,13 @@ def register_menu():
             print('0x', end='')
             print('%.2X' % pwm[board].readU8(x))
         elif command == 'x' or command == 'X':
-            board = value_valid(int(input('Please specify a board to target. [0-1]')), 0, 1)
+            board = value_valid(int(input('Please specify a board to target. [0-1]\n>')), 0, 1)
         elif command == 'h' or command == 'H':
             print('1 - Read GPIO Registers')
             print('2 - Read PWM Registers')
             print('3 - Write GPIO Registers')
             print('4 - Write PWM Registers')
-            print('5 - Retarget')
+            print('x - Retarget')
             print('h - Help')
             print('q - Return to Main Menu')
         elif command == 'q' or command == 'Q':
@@ -267,7 +267,7 @@ def register_menu():
 
 if __name__ == '__main__':
 
-    depot = MotorDepot()
+    depot = MotorDepot(1000, 200)
 
     print('Welcome to MotorDepot Console')
 
@@ -281,14 +281,14 @@ if __name__ == '__main__':
             servo_menu(depot)
         elif cmd == 't' or cmd == 't':
             stepper_menu(depot)
-        elif cmd == 'x' or cmd == 'x':
+        elif cmd == 'z' or cmd == 'z':
             register_menu()
         elif cmd == 'h' or cmd == 'H':
             print('b - Brushed Menu')
             print('d - Bridged Menu')
             print('s - Servo Menu')
             print('t - Stepper Menu')
-            print('x - Register Menu')
+            print('z - Register Menu')
             print('h - Help')
             print('q - Quit')
         elif cmd == 'q' or cmd == 'Q':
