@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="21e7b8f7-f92c-4017-ab9a-65df6a3937d9" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/MotorLibrary.py" beforeDir="false" afterPath="$PROJECT_DIR$/MotorLibrary.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Terminal.py" beforeDir="false" afterPath="$PROJECT_DIR$/Terminal.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -13,11 +12,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/MotorLibrary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="485">
-              <caret line="626" column="53" selection-start-line="626" selection-start-column="53" selection-end-line="626" selection-end-column="53" />
+            <state relative-caret-position="6860">
+              <caret line="617" column="30" lean-forward="true" selection-start-line="617" selection-start-column="30" selection-end-line="617" selection-end-column="30" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
                 <element signature="e#587#8585#0" />
@@ -44,11 +43,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Terminal.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="417">
-              <caret line="290" column="38" selection-start-line="290" selection-start-column="38" selection-end-line="290" selection-end-column="38" />
+            <state relative-caret-position="485">
+              <caret line="294" column="18" selection-start-line="294" selection-start-column="18" selection-end-line="294" selection-end-column="18" />
               <folding>
                 <element signature="e#0#26#0" expanded="true" />
               </folding>
@@ -79,8 +78,8 @@
         <option value="$PROJECT_DIR$/Motor_Library.py" />
         <option value="$PROJECT_DIR$/Testing/Test.py" />
         <option value="$PROJECT_DIR$/Test.py" />
-        <option value="$PROJECT_DIR$/Terminal.py" />
         <option value="$PROJECT_DIR$/MotorLibrary.py" />
+        <option value="$PROJECT_DIR$/Terminal.py" />
       </list>
     </option>
   </component>
@@ -506,23 +505,23 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Terminal.py">
+    <entry file="file://$PROJECT_DIR$/MotorLibrary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="417">
-          <caret line="290" column="38" selection-start-line="290" selection-start-column="38" selection-end-line="290" selection-end-column="38" />
+        <state relative-caret-position="6860">
+          <caret line="617" column="30" lean-forward="true" selection-start-line="617" selection-start-column="30" selection-end-line="617" selection-end-column="30" />
           <folding>
-            <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#587#8585#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/MotorLibrary.py">
+    <entry file="file://$PROJECT_DIR$/Terminal.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="485">
-          <caret line="626" column="53" selection-start-line="626" selection-start-column="53" selection-end-line="626" selection-end-column="53" />
+          <caret line="294" column="18" selection-start-line="294" selection-start-column="18" selection-end-line="294" selection-end-column="18" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
-            <element signature="e#587#8585#0" />
+            <element signature="e#0#26#0" expanded="true" />
           </folding>
         </state>
       </provider>
