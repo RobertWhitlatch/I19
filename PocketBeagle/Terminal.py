@@ -283,22 +283,12 @@ if __name__ == '__main__':
             stepper_menu(depot)
         elif cmd == 'x' or cmd == 'x':
             register_menu()
-        elif cmd == 'i' or cmd == 'I':
-            print('Group 0 configured as Brushed')
-            print('Group 1 configured as Bridged')
-            print('Group 2 configured as Stepper')
-            print('Group 3 not Configured')
-            print('Group 4 configured as Servo')
-            print('Group 5 configured as Servo')
-            print('Group 6 not configured')
-            print('Group 7 not Configured')
         elif cmd == 'h' or cmd == 'H':
             print('b - Brushed Menu')
             print('d - Bridged Menu')
             print('s - Servo Menu')
             print('t - Stepper Menu')
             print('x - Register Menu')
-            print('i - Info')
             print('h - Help')
             print('q - Quit')
         elif cmd == 'q' or cmd == 'Q':

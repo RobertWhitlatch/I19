@@ -216,21 +216,20 @@ class Brushed(object):
         self._decay = None
         self._base_reg = 6 + (group_num % 4)*16 + channel_num*8
 
-    @staticmethod
-    def _set_power(reg, index, power):
+    def _set_power(self, index, power):
         for i in range(4):
-            reg[index + i] = 0x00
+            self._registers[index + i] = 0x00
         if power is 0:
-            reg[index + 3] = 0x10
+            self._registers[index + 3] = 0x10
         elif power is 4096:
-            reg[index + 1] = 0x10
+            self._registers[index + 1] = 0x10
         else:
-            reg[index + 2] = power & 0x00FF
-            reg[index + 3] = (power & 0x0F00) >> 8
+            self._registers[index + 2] = power & 0x00FF
+            self._registers[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
-        self._set_power(self._registers, 0, 0)
-        self._set_power(self._registers, 4, 0)
+        self._set_power(0, 0)
+        self._set_power(4, 0)
         self._pwm.writeList(self._base_reg, self._registers)
 
     def resume(self):
@@ -288,20 +287,20 @@ class Brushed(object):
     def update(self):
         if self._direction is 'forward':
             if self._decay is 'fast':
-                self._set_power(self._base_reg, 0, self._speed)
-                self._set_power(self._base_reg, 4, 0)
+                self._set_power(0, self._speed)
+                self._set_power(4, 0)
             else:
                 speed_n = 4096 - self._speed
-                self._set_power(self._base_reg, 0, 4096)
-                self._set_power(self._base_reg, 4, speed_n)
+                self._set_power(0, 4096)
+                self._set_power(4, speed_n)
         else:
             if self._decay is 'fast':
-                self._set_power(self._base_reg, 0, 0)
-                self._set_power(self._base_reg, 4, self._speed)
+                self._set_power(0, 0)
+                self._set_power(4, self._speed)
             else:
                 speed_n = 4096 - self._speed
-                self._set_power(self._base_reg, 0, speed_n)
-                self._set_power(self._base_reg, 4, 4096)
+                self._set_power(0, speed_n)
+                self._set_power(4, 4096)
         self._pwm.writeList(self._base_reg, self._registers)
 
 
@@ -318,17 +317,16 @@ class Bridged(object):
         self._decay = None
         self._base_reg = 6 + (group_num % 4)*16
 
-    @staticmethod
-    def _set_power(reg, index, power):
+    def _set_power(self, index, power):
         for i in range(4):
-            reg[index + i] = 0x00
+            self._registers[index + i] = 0x00
         if power is 0:
-            reg[index + 3] = 0x10
+            self._registers[index + 3] = 0x10
         elif power is 4096:
-            reg[index + 1] = 0x10
+            self._registers[index + 1] = 0x10
         else:
-            reg[index + 2] = power & 0x00FF
-            reg[index + 3] = (power & 0x0F00) >> 8
+            self._registers[index + 2] = power & 0x00FF
+            self._registers[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
         x = self._gpio.readU8(0x01)
@@ -392,28 +390,28 @@ class Bridged(object):
     def update(self):
         if self._direction is 'forward':
             if self._decay is 'fast':
-                self._set_power(self._registers, 0, self._speed)
-                self._set_power(self._registers, 4, 0)
-                self._set_power(self._registers, 8, self._speed)
-                self._set_power(self._registers, 12, 0)
+                self._set_power(0, self._speed)
+                self._set_power(4, 0)
+                self._set_power(8, self._speed)
+                self._set_power(12, 0)
             else:
                 speed_n = 4096 - self._speed
-                self._set_power(self._registers, 0, 4096)
-                self._set_power(self._registers, 4, speed_n)
-                self._set_power(self._registers, 8, 4096)
-                self._set_power(self._registers, 12, speed_n)
+                self._set_power(0, 4096)
+                self._set_power(4, speed_n)
+                self._set_power(8, 4096)
+                self._set_power(12, speed_n)
         else:
             if self._decay is 'fast':
-                self._set_power(self._registers, 0, 0)
-                self._set_power(self._registers, 4, self._speed)
-                self._set_power(self._registers, 8, 0)
-                self._set_power(self._registers, 12, self._speed)
+                self._set_power(0, 0)
+                self._set_power(4, self._speed)
+                self._set_power(8, 0)
+                self._set_power(12, self._speed)
             else:
                 speed_n = 4096 - self._speed
-                self._set_power(self._registers, 0, speed_n)
-                self._set_power(self._registers, 4, 4096)
-                self._set_power(self._registers, 8, speed_n)
-                self._set_power(self._registers, 12, 4096)
+                self._set_power(0, speed_n)
+                self._set_power(4, 4096)
+                self._set_power(8, speed_n)
+                self._set_power(12, 4096)
         self._pwm.writeList(self._base_reg, self._registers)
 
 
@@ -429,24 +427,23 @@ class Servo(object):
         self._upper_bound = 2048
         self._base_reg = 6 + (group_num % 4)*16 + line_num*4
 
-    @staticmethod
-    def _set_power(reg, index, power):
+    def _set_power(self, index, power):
         for i in range(4):
-            reg[index + i] = 0x00
+            self._registers[index + i] = 0x00
         if power is 0:
-            reg[index + 3] = 0x10
+            self._registers[index + 3] = 0x10
         elif power is 4096:
-            reg[index + 1] = 0x10
+            self._registers[index + 1] = 0x10
         else:
-            reg[index + 2] = power & 0x00FF
-            reg[index + 3] = (power & 0x0F00) >> 8
+            self._registers[index + 2] = power & 0x00FF
+            self._registers[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
-        self._set_power(self._registers, 0, 0)
+        self._set_power(0, 0)
         self._pwm.writeList(self._base_reg, self._registers)
 
     def resume(self):
-        self._set_power(self._registers, 0, self._position)
+        self._set_power(0, self._position)
         self._pwm.writeList(self._base_reg, self._registers)
 
     def set_bounds(self, lower, upper):
@@ -476,7 +473,7 @@ class Servo(object):
             print('Invalid position, please use values between ',
                   self._lower_bound, ' and ', self._upper_bound, ' inclusive, or 0.\n', end='')
         self._position = position
-        self._set_power(self._registers, 0, self._position)
+        self._set_power(0, self._position)
         self._pwm.writeList(self._base_reg, self._registers)
 
 
@@ -504,17 +501,16 @@ class Stepper(object):
         self._current_direction = None
         self._base_reg = 6 + (group_num % 4) * 4
 
-    @staticmethod
-    def _set_power(reg, index, power):
+    def _set_power(self, index, power):
         for i in range(4):
-            reg[index + i] = 0x00
+            self._registers[index + i] = 0x00
         if power is 0:
-            reg[index + 3] = 0x10
+            self._registers[index + 3] = 0x10
         elif power is 4096:
-            reg[index + 1] = 0x10
+            self._registers[index + 1] = 0x10
         else:
-            reg[index + 2] = power & 0x00FF
-            reg[index + 3] = (power & 0x0F00) >> 8
+            self._registers[index + 2] = power & 0x00FF
+            self._registers[index + 3] = (power & 0x0F00) >> 8
 
     def suspend(self):
         self.stop_spinning()
@@ -528,7 +524,7 @@ class Stepper(object):
         self._gpio.write8(0x01, x)
         if self._current_spin is None:
             for i in range(4):
-                self._set_power(self._registers, i * 4, self._selected_states[self._current_state][i])
+                self._set_power(i * 4, self._selected_states[self._current_state][i])
             self._pwm.writeList(self._base_reg, self._registers)
         elif self._current_spin == 'standard':
             self.spin_standard(self._current_direction)
@@ -561,12 +557,12 @@ class Stepper(object):
     def move_one_step(self, direction):
         if direction == 'CCW':
             for i in range(4):
-                self._set_power(self._registers, i*4, self._selected_states[self._current_state][i])
+                self._set_power(i*4, self._selected_states[self._current_state][i])
             self._current_state = (self._current_state + 1) % self._selected_size
         elif direction == 'CW':
             current_state_n = self._selected_size-1-self._current_state
             for i in range(4):
-                self._set_power(self._registers, i*4, self._selected_states[current_state_n][i])
+                self._set_power(i*4, self._selected_states[current_state_n][i])
             self._current_state = (self._current_state + 1) % self._selected_size
         else:
             print('Invalid direction, please use "CW" or "CCW"')
@@ -582,7 +578,7 @@ class Stepper(object):
         self._current_spin = None
         self._current_direction = None
         for i in range(4):
-            self._set_power(self._base_reg, i*4, 0)
+            self._set_power(i*4, 0)
         self._pwm.writeList(self._base_reg, self._registers)
 
     def spin_standard(self, direction):
@@ -629,20 +625,3 @@ class Stepper(object):
             self._pwm.writeList(self._base_reg, load_n)
         else:
             print('Direction must be "CW" or "CCW".')
-
-
-if __name__ == '__main__':
-    depot = MotorDepot()
-
-    group = depot.get_group(0, 'Stepper')
-    zero = group[0]
-
-    zero.select_step_method('half')
-
-    try:
-        while True:
-            zero.move_num_steps(400, 'CW')
-            input('>')
-    except KeyboardInterrupt:
-        depot.release_group(0, 'Stepper')
-        depot.all_suspend()
