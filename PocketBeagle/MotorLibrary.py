@@ -503,7 +503,7 @@ class Stepper(object):
         self._current_state = 0
         self._current_spin = None
         self._current_direction = None
-        self._base_reg = 6 + (group_num % 4) * 4
+        self._base_reg = 6 + (group_num % 4)*16
 
     def _set_power(self, index, power):
         for i in range(4):
