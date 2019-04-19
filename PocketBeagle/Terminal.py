@@ -55,7 +55,7 @@ def brushed_menu(brushed_depot):
             print('x - Retarget')
             print('h - Help')
             print('q - Return to Main Menu')
-        elif cmd == 'q' or cmd == 'Q':
+        elif command == 'q' or command == 'Q':
             brushed_depot.release_group(brushed_group, 'Brushed')
             break
 
@@ -94,7 +94,7 @@ def bridged_menu(bridged_depot):
             print('x - Retarget')
             print('h - Help')
             print('q - Return to Main Menu')
-        elif cmd == 'q' or cmd == 'Q':
+        elif command == 'q' or command == 'Q':
             bridged_depot.release_group(bridged_group, 'Bridged')
             break
 
