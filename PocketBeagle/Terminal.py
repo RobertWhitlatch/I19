@@ -111,13 +111,13 @@ def servo_menu(servo_depot):
             y = value_valid(int(input('Specify the upper limit of the Servo\'s range. [' + str(x) + '-2048]\n>')), x, 2048)
             servo_list[servo_line].set_bounds(x, y)
         elif command == '2':
-            a = servo_list[servo_line].get_lower()
-            b = servo_list[servo_line].get_upper()
+            a = servo_list[servo_line].get_lower_bound()
+            b = servo_list[servo_line].get_upper_bound()
             x = value_valid(int(input('Specify new position for Servo. (' + str(a) + '-' + str(b) + ')\n>')), a, b)
             servo_list[servo_line].set_position(x)
         elif command == '3':
-            a = servo_list[servo_line].get_lower()
-            b = servo_list[servo_line].get_upper()
+            a = servo_list[servo_line].get_lower_bound()
+            b = servo_list[servo_line].get_upper_bound()
             servo_list[servo_line].set_position(a)
             sleep(1)
             servo_list[servo_line].set_position(b)
