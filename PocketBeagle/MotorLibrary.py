@@ -40,12 +40,16 @@ class MotorDepot(object):
         self._pwm = [None, None]
         self._groups = [None, None, None, None, None, None, None, None]
         self._group_status = [0, 0, 0, 0, 0, 0, 0, 0]
-        if board_zero_freq != 200 & board_zero_freq != 1000 & board_zero_freq != 1526:
+        if board_zero_freq == 200 | board_zero_freq == 1000 | board_zero_freq == 1526:
             print("Unsupported Frequency supplied for board zero, defaulting to 200Hz")
             self._board_freq[0] = 200
-        if board_one_freq != 200 & board_one_freq != 1000 & board_one_freq != 1526:
+        else:
+            self._board_freq[0] = board_zero_freq
+        if board_one_freq == 200 | board_one_freq == 1000 | board_one_freq == 1526:
             print("Unsupported Frequency supplied for board one, defaulting to 200Hz")
             self._board_freq[1] = 200
+        else:
+            self._board_freq[0] = board_zero_freq
         for i in range(2):
             self._check_active_addresses(i, bus)
 
