@@ -555,7 +555,7 @@ class Stepper(object):
         else:
             print('Supported stepping methods are "full", "torque", and "half".')
 
-    def get_stepping_method(self):
+    def get_step_method(self):
         return self._current_method
 
     def move_one_step(self, direction):

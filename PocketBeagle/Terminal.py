@@ -123,6 +123,8 @@ def servo_menu(servo_depot):
             servo_list[servo_line].set_position(b)
             sleep(1)
             servo_list[servo_line].set_position(a)
+            sleep(1)
+            servo_list[servo_line].set_position((a+b)/2)
         elif command == 'x' or command == 'X':
             x = value_valid(int(input('Please specify a Group to target. [0-7]\n>')), 0, 7)
             y = value_valid(int(input('Please specify a Line to target. [0-3]\n>')), 0, 3)
@@ -155,7 +157,7 @@ def stepper_menu(stepper_depot):
             x = value_valid(int(input('Specify number of steps to move Stepper. [1-65535]\n>')), 1, 65535)
             stepper_list[0].move_num_steps(x, 'CCW')
         elif command == '3':
-            x = stepper_list[0].get_stepping_method()
+            x = stepper_list[0].get_step_method()
             if x == 'standard':
                 stepper_list[0].spin_standard('CW')
             elif x == 'torque':
@@ -163,7 +165,7 @@ def stepper_menu(stepper_depot):
             elif x == 'half':
                 stepper_list[0].spin_half('CW')
         elif command == '4':
-            x = stepper_list[0].get_stepping_method()
+            x = stepper_list[0].get_step_method()
             if x == 'standard':
                 stepper_list[0].spin_standard('CCW')
             elif x == 'torque':
@@ -171,11 +173,11 @@ def stepper_menu(stepper_depot):
             elif x == 'half':
                 stepper_list[0].spin_half('CCW')
         elif command == '7':
-            stepper_list[0].select_stepping_method('standard')
+            stepper_list[0].select_step_method('standard')
         elif command == '8':
-            stepper_list[0].select_stepping_method('torque')
+            stepper_list[0].select_step_method('torque')
         elif command == '9':
-            stepper_list[0].select_stepping_method('half')
+            stepper_list[0].select_step_method('half')
         elif command == '0':
             stepper_list[0].stop_spinning()
         elif command == 'x' or command == 'X':
