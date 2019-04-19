@@ -223,9 +223,9 @@ class Brushed(object):
     def _set_power(self, index, power):
         for i in range(4):
             self._registers[index + i] = 0x00
-        if power is 0:
+        if power == 0:
             self._registers[index + 3] = 0x10
-        elif power is 4096:
+        elif power == 4096:
             self._registers[index + 1] = 0x10
         else:
             self._registers[index + 2] = power & 0x00FF
@@ -324,9 +324,9 @@ class Bridged(object):
     def _set_power(self, index, power):
         for i in range(4):
             self._registers[index + i] = 0x00
-        if power is 0:
+        if power == 0:
             self._registers[index + 3] = 0x10
-        elif power is 4096:
+        elif power == 4096:
             self._registers[index + 1] = 0x10
         else:
             self._registers[index + 2] = power & 0x00FF
@@ -434,9 +434,9 @@ class Servo(object):
     def _set_power(self, index, power):
         for i in range(4):
             self._registers[index + i] = 0x00
-        if power is 0:
+        if power == 0:
             self._registers[index + 3] = 0x10
-        elif power is 4096:
+        elif power == 4096:
             self._registers[index + 1] = 0x10
         else:
             self._registers[index + 2] = power & 0x00FF
@@ -508,9 +508,9 @@ class Stepper(object):
     def _set_power(self, index, power):
         for i in range(4):
             self._registers[index + i] = 0x00
-        if power is 0:
+        if power == 0:
             self._registers[index + 3] = 0x10
-        elif power is 4096:
+        elif power == 4096:
             self._registers[index + 1] = 0x10
         else:
             self._registers[index + 2] = power & 0x00FF
