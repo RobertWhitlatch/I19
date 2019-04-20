@@ -269,7 +269,7 @@ def register_menu():
 
 if __name__ == '__main__':
 
-    depot = MotorDepot(1000, 200)
+    depot = MotorDepot(400, 200)
 
     print('Welcome to MotorDepot Console')
 
