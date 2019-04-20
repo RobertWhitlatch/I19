@@ -272,27 +272,30 @@ if __name__ == '__main__':
     depot = MotorDepot(400, 200)
 
     print('Welcome to MotorDepot Console')
-
-    while True:
-        cmd = input('>')
-        if cmd == 'b' or cmd == 'B':
-            brushed_menu(depot)
-        elif cmd == 'd' or cmd == 'D':
-            bridged_menu(depot)
-        elif cmd == 's' or cmd == 'S':
-            servo_menu(depot)
-        elif cmd == 't' or cmd == 't':
-            stepper_menu(depot)
-        elif cmd == 'z' or cmd == 'z':
-            register_menu()
-        elif cmd == 'h' or cmd == 'H':
-            print('b - Brushed Menu')
-            print('d - Bridged Menu')
-            print('s - Servo Menu')
-            print('t - Stepper Menu')
-            print('z - Register Menu')
-            print('h - Help')
-            print('q - Quit')
-        elif cmd == 'q' or cmd == 'Q':
+    try:
+        while True:
+            cmd = input('>')
+            if cmd == 'b' or cmd == 'B':
+                brushed_menu(depot)
+            elif cmd == 'd' or cmd == 'D':
+                bridged_menu(depot)
+            elif cmd == 's' or cmd == 'S':
+                servo_menu(depot)
+            elif cmd == 't' or cmd == 't':
+                stepper_menu(depot)
+            elif cmd == 'z' or cmd == 'z':
+                register_menu()
+            elif cmd == 'h' or cmd == 'H':
+                print('b - Brushed Menu')
+                print('d - Bridged Menu')
+                print('s - Servo Menu')
+                print('t - Stepper Menu')
+                print('z - Register Menu')
+                print('h - Help')
+                print('q - Quit')
+            elif cmd == 'q' or cmd == 'Q':
+                depot.close_depot()
+                exit(0)
+    except KeyboardInterrupt:
             depot.close_depot()
             exit(0)
