@@ -81,6 +81,7 @@ gcc/
 rvmdk/
 doc/
 build/
+.idea/
 
 # Documentation
 *.3
