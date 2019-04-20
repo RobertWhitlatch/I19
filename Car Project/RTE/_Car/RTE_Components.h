@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'MotorLibrary' 
- * Target:  'MotorLibrary' 
+ * Project: 'Car' 
+ * Target:  'Car' 
  */
 
 #ifndef RTE_COMPONENTS_H

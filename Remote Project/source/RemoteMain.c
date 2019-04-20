@@ -22,7 +22,7 @@ void RemoteMain(void){
     while(1){
         if(messageFlag){
             messageFlag = false;
-            xBee_CmdOut(leftMessage, rightMessage);
+            xBee_OutCmd(leftMessage, rightMessage);
             // fprintf(uart, "Left: %2X\tRight: %2X\n", leftMessage, rightMessage);
         }
         // LED = colorIndex << 1;

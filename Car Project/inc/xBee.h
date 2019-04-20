@@ -9,6 +9,6 @@ uint8_t xBee_InByte(void);
 
 void xBee_OutByte(uint8_t byte);
 
-void xBee_OutCmd(uint8_t left, uint8_t right);
+void xBee_InCmd(uint8_t left, uint8_t right);
 
 #endif // __XBEE_H__

@@ -4,8 +4,8 @@
 
 #define xBee_SUCCESS 1
 #define xBee_FAILURE 0
-AddIndexFifo(xBeeTx, xBee_FIFO_SIZE, char, xBee_SUCCESS, xBee_FAILURE)
-AddIndexFifo(xBeeRx, xBee_FIFO_SIZE, char, xBee_SUCCESS, xBee_FAILURE)
+AddIndexFifo(xBeeTx, xBee_FIFO_SIZE, uint8_t, xBee_SUCCESS, xBee_FAILURE)
+AddIndexFifo(xBeeRx, xBee_FIFO_SIZE, uint8_t, xBee_SUCCESS, xBee_FAILURE)
 
 void xBee_Init(void){
 
@@ -45,7 +45,7 @@ static void xBeeCopyHardwareToSoftware(void) {
 }
 
 static void xBeeCopySoftwareToHardware(void) {
-    char byte = 0;
+    uint8_t byte = 0;
     while(((UART7_FR_R&UART_FR_TXFF) == 0) && (xBeeTxFifo_Size() > 0)) {
         xBeeTxFifo_Get(&byte);
         UART7_DR_R = byte;
@@ -53,7 +53,7 @@ static void xBeeCopySoftwareToHardware(void) {
 }
 
 uint8_t xBee_InByte(void) {
-    char byte;
+    uint8_t byte;
     while(xBeeRxFifo_Get(&byte) == xBee_FAILURE);
     return (byte);
 }
@@ -65,7 +65,7 @@ void xBee_OutByte(uint8_t byte) {
     UART7_IM_R |= UART_IM_TXIM;
 }
 
-void xBee_CmdOut(uint8_t left, uint8_t right) {
+void xBee_OutCmd(uint8_t left, uint8_t right) {
     while(xBeeTxFifo_Put(left) == xBee_FAILURE);
     while(xBeeTxFifo_Put(right) == xBee_FAILURE);
     UART7_IM_R &= ~UART_IM_TXIM;
