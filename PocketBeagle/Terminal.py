@@ -294,4 +294,5 @@ if __name__ == '__main__':
             print('h - Help')
             print('q - Quit')
         elif cmd == 'q' or cmd == 'Q':
+            depot.close_depot()
             exit(0)
