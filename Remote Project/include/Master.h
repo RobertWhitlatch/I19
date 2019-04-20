@@ -28,32 +28,26 @@ extern FILE* const uart;
 extern FILE* const null;
 
 // Project Globals
-extern uint32_t polarityFlag;
-extern uint32_t Left_Speed;
-extern uint32_t Left_Sign;
-extern uint32_t Right_Speed;
-extern uint32_t Right_Sign;
-extern uint32_t message;
-extern uint32_t messageFlag;
+extern uint8_t polarityFlag;
+extern uint8_t rightMessage;
+extern uint8_t leftMessage;
+extern uint8_t messageFlag;
 
 // Environmental Definitions
 #define UART_FIFO_SIZE 256
 
 // Project Defines
-#define xBee_FIFO_SIZE 256
-#define PLUS 0
-#define MINUS 1
-#define LEFT_SPEED_OFFSET 0
-#define LEFT_SIGN_OFFSET 11
-#define RIGHT_SPEED_OFFSET 12
-#define RIGHT_SIGN_OFFSET 23
-#define START_OFFSET 24
-#define SPEED_MASK 0x7FF
-
-#define KEY(x) // 2 bits
-#define ID(x) // 2 bits
-#define SIGN(x) 0x0100 // 1 bits
-#define SPEED(x) 0x0EFF // 11 bits
+#define xBee_FIFO_SIZE  256
+#define PLUS            0
+#define MINUS           1
+#define LEFT            0x00
+#define RIGHT           0x80
+#define ID(x)           (((x)&0x80)>>7)
+#define ID_SET(x,y)     (y)=(((y)&0x7F)|((x&0x1)<<7))
+#define SIGN(x)         (((x)&0x40)>>6)
+#define SIGN_SET(x,y)   (y)=(((y)&0xBF)|((x&0x1)<<5))
+#define SPEED(x)        (((x)&0x3F)>>0)
+#define SPEED_SET(x,y)  (y)=(((y)&0xC0)|((x&0x3F)<<0))
 
 // Useful Macros
 #define MAX(a,b) ((a>b)?a:b)
@@ -114,5 +108,6 @@ void WaitForInterrupt(void);  // low power mode
 #define PF2             (*((volatile uint32_t *)0x40025010))
 #define PF3             (*((volatile uint32_t *)0x40025020))
 #define PF4             (*((volatile uint32_t *)0x40025040))
+#define LED             (*((volatile uint32_t *)0x40025038))
 
 #endif // __MASTER_H__

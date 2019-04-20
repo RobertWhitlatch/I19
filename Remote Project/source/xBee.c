@@ -65,6 +65,14 @@ void xBee_OutByte(uint8_t byte) {
     UART7_IM_R |= UART_IM_TXIM;
 }
 
+void xBee_CmdOut(uint8_t left, uint8_t right) {
+    while(xBeeTxFifo_Put(left) == xBee_FAILURE);
+    while(xBeeTxFifo_Put(right) == xBee_FAILURE);
+    UART7_IM_R &= ~UART_IM_TXIM;
+    xBeeCopySoftwareToHardware();
+    UART7_IM_R |= UART_IM_TXIM;
+}
+
 void UART7_Handler(void) {
     if(UART7_RIS_R&UART_RIS_TXRIS) {
         UART7_ICR_R = UART_ICR_TXIC;
@@ -81,68 +89,4 @@ void UART7_Handler(void) {
         UART7_ICR_R = UART_ICR_RTIC;
         xBeeCopyHardwareToSoftware();
     }
-}
-
-uint32_t xBee_InMessage(void){
-
-    uint32_t msg = 0;
-    uint8_t byte = 0;
-    byte = xBee_InByte();
-    msg += byte;
-    msg <<= 8;
-    byte = xBee_InByte();
-    msg += byte;
-    msg <<= 8;
-    byte = xBee_InByte();
-    msg += byte;
-    msg <<= 8;
-    byte = xBee_InByte();
-    msg += byte;
-    return (msg);
-}
-
-void xBee_OutMessage(uint32_t msg){
-
-    uint16_t delay; 
-    uint8_t byte = 0;
-    byte = (msg & 0xFF000000) >> 24;
-    xBee_OutByte(byte);
-    delay = 1000;
-    while(delay){
-        delay--;
-    }
-    byte = (msg & 0x00FF0000) >> 16;
-    xBee_OutByte(byte);
-    delay = 1000;
-    while(delay){
-        delay--;
-    }
-    byte = (msg & 0x0000FF00) >> 8;
-    xBee_OutByte(byte);
-    delay = 1000;
-    while(delay){
-        delay--;
-    }
-    byte = (msg & 0x000000FF);
-    xBee_OutByte(byte);
-    delay = 400;
-    while(delay){
-        delay--;
-    }
-
-}
-
-void xBee_Packager(void){
-
-    Left_Speed = (Left_Speed > 0x7FF) ? 0x7FF : Left_Speed;
-    Right_Speed = (Right_Speed > 0x7FF) ? 0x7FF : Right_Speed;
-    if(polarityFlag){
-        Right_Sign ^= 0x1;
-        Left_Sign ^= 0x1;
-    }
-    message += (Left_Speed & SPEED_MASK) << LEFT_SPEED_OFFSET;
-    message += (Left_Sign) << LEFT_SIGN_OFFSET;
-    message += (Right_Speed & SPEED_MASK) << RIGHT_SPEED_OFFSET;
-    message += (Right_Sign) << RIGHT_SIGN_OFFSET;
-
 }

@@ -8,16 +8,16 @@ void GPIO_Init(void){
     SYSCTL_RCGCTIMER_R |= 0x02;                                 // Clock on for Timer1
 
     GPIO_PORTF_LOCK_R = GPIO_LOCK_KEY;                          // Unlock Port F
-    GPIO_PORTF_CR_R |= 0x1F;                                    // Enable Commits on Port F
-    GPIO_PORTF_AMSEL_R &= ~0x11;                                // Disable Analog Mode
-    GPIO_PORTF_AFSEL_R &= ~0x11;                                // Disable Alternate Functions
-    GPIO_PORTF_PCTL_R &= ~0x000F000F;                           // Disable Peripherals
-    GPIO_PORTF_DIR_R &= ~0x11;                                  // Set Port F as out
-    GPIO_PORTF_DEN_R |= 0x11;                                   // Enable Digital Operations on PF0 and PF4
-    GPIO_PORTF_PUR_R |= 0x11;                                   // Enable Pull Up Resistors on PF0 and PF4
-    GPIO_PORTF_IS_R &= ~0x11;                                   // Interrupts are Edge-Sensitive
-    GPIO_PORTF_IEV_R &= ~0x11;                                  // Interrupt on falling edge on PF0 and PF4
-    GPIO_PORTF_IBE_R &= ~0x11;                                  // Disable Interrupts on both edges
+    GPIO_PORTF_CR_R = 0x1F;                                     // Enable Commits on Port F
+    GPIO_PORTF_AMSEL_R = 0x11;                                  // Disable Analog Mode
+    GPIO_PORTF_AFSEL_R = 0x11;                                  // Disable Alternate Functions
+    GPIO_PORTF_PCTL_R = 0x00000000;                             // Disable Peripherals
+    GPIO_PORTF_DIR_R = 0x1E;                                    // Set Port F as out
+    GPIO_PORTF_DEN_R = 0x1F;                                    // Enable Digital Operations on PF0 and PF4
+    GPIO_PORTF_PUR_R = 0x11;                                    // Enable Pull Up Resistors on PF0 and PF4
+    GPIO_PORTF_IS_R = 0x00;                                     // Interrupts are Edge-Sensitive
+    GPIO_PORTF_IEV_R = 0x00;                                    // Interrupt on falling edge on PF0 and PF4
+    GPIO_PORTF_IBE_R = 0x00;                                    // Disable Interrupts on both edges
     GPIO_PORTF_ICR_R |= 0x11;                                   // Clear old interrupts
     GPIO_PORTF_IM_R |= 0x11;                                    // Enable sending interrupts to Controller
     NVIC_EN0_R |= 0x40000000;                                   // Enable Interrupt 30

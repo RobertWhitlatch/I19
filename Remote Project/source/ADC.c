@@ -48,42 +48,40 @@ void ADC_Init(void){
 
 }
 
-uint32_t ADC_Normalization(uint32_t speedADC, uint8_t side){
-
-    if(speedADC >= 2300){
-        speedADC = speedADC - 2048;
-        if(side == 'L'){
-            Left_Sign = PLUS;
-        }else{
-            Right_Sign = PLUS;
-        }
-    }else if(speedADC <= 1900){
-        speedADC = 2048 - speedADC;
-        if(side == 'L'){
-            Left_Sign = MINUS;
-        }else{
-            Right_Sign = MINUS;
-        }
-    }else{
-        speedADC = 0;
-    }
-    return (speedADC);
-
-}
-
 void ADC0Seq3_Handler(void){
 
     ADC0_ISC_R |= 0x02;
-    uint32_t L_speed = ADC0_SSFIFO3_R;
-    Left_Speed = ADC_Normalization(L_speed, 'L');
+    uint32_t speed = ADC0_SSFIFO3_R;
+    leftMessage = LEFT;
+    if(speed >= 2300){
+        speed = (speed - 2048) >> 5;
+        SPEED_SET(speed,leftMessage);
+        SIGN_SET(PLUS,leftMessage);
+    }else if(speed <= 1900){
+        speed = (2048 - speed) >> 5;
+        SPEED_SET(speed,leftMessage);
+        SIGN_SET(MINUS,leftMessage);
+    }else{
+        SPEED_SET(0,leftMessage);
+    }
 
 }
 
 void ADC1Seq3_Handler(void){
 
     ADC1_ISC_R |= 0x04;
-    uint32_t R_speed = ADC1_SSFIFO3_R;
-    Right_Speed = ADC_Normalization(R_speed, 'R');
+    uint32_t speed = ADC1_SSFIFO3_R;
+    rightMessage = RIGHT;
+    if(speed >= 2300){
+        speed = (speed - 2048) >> 5;
+        SPEED_SET(speed,rightMessage);
+        SIGN_SET(PLUS,rightMessage);
+    }else if(speed <= 1900){
+        speed = (2048 - speed) >> 5;
+        SPEED_SET(speed,rightMessage);
+        SIGN_SET(MINUS,rightMessage);
+    }else{
+        SPEED_SET(0,rightMessage);
+    }
 
 }
-
