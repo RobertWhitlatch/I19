@@ -36,10 +36,10 @@ void CarMain(void){
             rightSpeed = FULL_ON;
         }
 
-        set_all_bridged(3, DECAY_SLOW, SIGN(leftMessage),  leftSpeed,  UPDATE_BUILD);
-        set_all_bridged(2, DECAY_SLOW, SIGN(leftMessage),  leftSpeed,  UPDATE_BUILD);
-        set_all_bridged(1, DECAY_SLOW, SIGN(rightMessage), rightSpeed, UPDATE_BUILD);
-        set_all_bridged(0, DECAY_SLOW, SIGN(rightMessage), rightSpeed, UPDATE_BUILD);
+        set_all_bridged(3, DECAY_FAST, SIGN(leftMessage),  leftSpeed,  UPDATE_BUILD);
+        set_all_bridged(2, DECAY_FAST, SIGN(leftMessage),  leftSpeed,  UPDATE_BUILD);
+        set_all_bridged(1, DECAY_FAST, SIGN(rightMessage), rightSpeed, UPDATE_BUILD);
+        set_all_bridged(0, DECAY_FAST, SIGN(rightMessage), rightSpeed, UPDATE_BUILD);
         write_board_buffer(0);
 
 //        fprintf(uart, "0x%02X\t0x%02X\n", leftMessage, rightMessage);
