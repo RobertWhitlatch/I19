@@ -48,40 +48,77 @@ void ADC_Init(void){
 
 }
 
+uint32_t medianFilter0(uint32_t input){
+    static uint32_t prev1 = 0, prev2 = 0, prev3 = 0;
+    prev1 = prev2;
+    prev2 = prev3;
+    prev3 = input;
+    if(prev1 > prev2){
+        if(prev2 > prev3) return prev2;
+        if(prev1 > prev3) return prev3;
+        return prev1;
+    }else{
+        if(prev3 > prev2) return prev2;
+        if(prev1 > prev3) return prev1;
+        return prev3;
+    }
+}
+
+uint32_t medianFilter1(uint32_t input){
+    static uint32_t prev1 = 0, prev2 = 0, prev3 = 0;
+    prev1 = prev2;
+    prev2 = prev3;
+    prev3 = input;
+    if(prev1 > prev2){
+        if(prev2 > prev3) return prev2;
+        if(prev1 > prev3) return prev3;
+        return prev1;
+    }else{
+        if(prev3 > prev2) return prev2;
+        if(prev1 > prev3) return prev1;
+        return prev3;
+    }
+}
+
 void ADC0Seq3_Handler(void){
 
     ADC0_ISC_R |= 0x02;
-    uint32_t speed = ADC0_SSFIFO3_R;
+    uint32_t speed = medianFilter0(ADC0_SSFIFO3_R);
     leftMessage = LEFT;
-    if(speed >= 2300){
+    if(speed >= 2304){
         speed = (speed - 2048) >> 5;
         SPEED_SET(speed,leftMessage);
         SIGN_SET(PLUS,leftMessage);
-    }else if(speed <= 1900){
+    }else if(speed <= 1792){
         speed = (2048 - speed) >> 5;
         SPEED_SET(speed,leftMessage);
         SIGN_SET(MINUS,leftMessage);
     }else{
         SPEED_SET(0,leftMessage);
     }
-
+    if(polarityFlag){
+        leftMessage ^= 0x40;
+    }
 }
 
 void ADC1Seq3_Handler(void){
 
     ADC1_ISC_R |= 0x04;
-    uint32_t speed = ADC1_SSFIFO3_R;
+    uint32_t speed = medianFilter1(ADC1_SSFIFO3_R);
     rightMessage = RIGHT;
-    if(speed >= 2300){
+    if(speed >= 2304){
         speed = (speed - 2048) >> 5;
         SPEED_SET(speed,rightMessage);
         SIGN_SET(PLUS,rightMessage);
-    }else if(speed <= 1900){
+    }else if(speed <= 1792){
         speed = (2048 - speed) >> 5;
         SPEED_SET(speed,rightMessage);
         SIGN_SET(MINUS,rightMessage);
     }else{
         SPEED_SET(0,rightMessage);
+    }
+    if(polarityFlag){
+        rightMessage ^= 0x40;
     }
 
 }
