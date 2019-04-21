@@ -31,14 +31,14 @@ extern FILE* null;
 
 // Project Defines
 #define xBee_FIFO_SIZE  256
-#define PLUS            0
-#define MINUS           1
+#define PLUS            1
+#define MINUS           0
 #define LEFT            0x00
 #define RIGHT           0x80
 #define ID(x)           (((x)&0x80)>>7)
 #define ID_SET(x,y)     (y)=(((y)&0x7F)|((x&0x1)<<7))
 #define SIGN(x)         (((x)&0x40)>>6)
-#define SIGN_SET(x,y)   (y)=(((y)&0xBF)|((x&0x1)<<5))
+#define SIGN_SET(x,y)   (y)=(((y)&0xBF)|((x&0x1)<<6))
 #define SPEED(x)        (((x)&0x3F)>>0)
 #define SPEED_SET(x,y)  (y)=(((y)&0xC0)|((x&0x3F)<<0))
 

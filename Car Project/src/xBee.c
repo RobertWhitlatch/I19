@@ -24,51 +24,44 @@ const eUSCI_UART_Config xBeeConfig = {
 void xBee_Init(void){
     xBeeRxFifo_Init();
     xBeeTxFifo_Init();
-    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P2, GPIO_PIN2 | GPIO_PIN3 | GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);
-    UART_initModule(EUSCI_A1_BASE, &xBeeConfig);
-    UART_enableModule(EUSCI_A1_BASE);
-    NVIC_IPR4 = (NVIC_IPR4&0xFFFF00FF)|0x00004000;
-    NVIC_ISER0 = 0x00020000;
-    UCA1CTLW0 &= ~0x0001;
-    UCA1IE = 0x0001;
+    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P3, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+    UART_initModule(EUSCI_A2_BASE, &xBeeConfig);
+    UART_enableModule(EUSCI_A2_BASE);
+    NVIC_IPR4 = (NVIC_IPR4&0xFF00FFFF)|0x00400000;
+    NVIC_ISER0 = 0x00040000;
+    UCA2CTLW0 &= ~0x0001;
+    UCA2IE = 0x0001;
 }
 
-
-//------------UART_InChar------------
-// Wait for new serial port input
-// Input: none
-// Output: ASCII code for key typed
-// spin if RxFifo is empty
 uint8_t xBee_InByte(void){
-    uint8_t letter;
-    while(xBeeRxFifo_Get(&letter) == xBee_FAIL){};
-    return(letter);
+    uint8_t byte;
+    while(xBeeRxFifo_Get(&byte) == xBee_FAIL){};
+    return(byte);
 }
 
-//------------UART_OutChar------------
-// Output 8-bit to serial port
-// Input: letter is an 8-bit ASCII character to be transferred
-// Output: none
-// spin if TxFifo is full
 void xBee_OutByte(uint8_t byte){
-    while(xBeeTxFifo_Put(byte) == xBee_FAIL){}; // spin if full
-    UCA1IE = 0x0003;     // enable interrupts on transmit empty and receive full
+    while(xBeeTxFifo_Put(byte) == xBee_FAIL){};
+    UCA2IE = 0x0003;
 }
 
-// interrupt 16 occurs on either:
-// UCTXIFG TX data register is empty
-// UCRXIFG RX data register is full
-// vector at 0x00000080 in startup_msp432.s
-void EUSCIA1_IRQHandler(void){
-        uint8_t data; 
-    if(UCA1IFG&0x02){             // TX data register empty
+void xBee_InCmd(uint8_t* left, uint8_t* right){
+    uint8_t byte;
+    while(xBeeRxFifo_Get(&byte) == xBee_FAIL){};
+    (ID(byte)) ? (*right = byte) : (*left = byte);
+    while(xBeeRxFifo_Get(&byte) == xBee_FAIL){};
+    (ID(byte)) ? (*right = byte) : (*left = byte);
+}
+
+void EUSCIA2_IRQHandler(void){
+    uint8_t data; 
+    if(UCA2IFG&0x02){
         if(xBeeTxFifo_Get(&data) == xBee_FAIL){
-        UCA1IE = 0x0001;         // disable interrupts on transmit empty
+            UCA2IE = 0x0001;
         }else{
-        UCA1TXBUF = data;        // send data, acknowledge interrupt
+            UCA2TXBUF = data;
         }
     }
-    if(UCA1IFG&0x01){             // RX data register full
-        xBeeRxFifo_Put((uint8_t)UCA1RXBUF);// clears UCRXIFG
+    if(UCA2IFG&0x01){
+        xBeeRxFifo_Put((uint8_t)UCA2RXBUF);
     }
 }

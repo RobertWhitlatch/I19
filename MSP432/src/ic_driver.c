@@ -3,6 +3,8 @@
 #define GPIO_BASE 0x20
 #define PWM_BASE 0x40
 
+uint8_t pwm_buffer[2][64];
+
 void initGPIO(unsigned int* board){
     uint8_t data = 0xE0;
     if(board[0]){
@@ -11,6 +13,16 @@ void initGPIO(unsigned int* board){
     }
     if(board[1]){
         writeI2C(GPIO_BASE+1, 3, &data, 1);
+        writeI2C(GPIO_BASE+1, 1, &data, 1);
+    }
+}
+
+void closeGPIO(unsigned int* board){
+    uint8_t data = 0xF0;
+    if(board[0]){
+        writeI2C(GPIO_BASE, 1, &data, 1);
+    }
+    if(board[1]){
         writeI2C(GPIO_BASE+1, 1, &data, 1);
     }
 }
@@ -61,10 +73,10 @@ void initPWM(unsigned int* board, unsigned int* freq){
         data = 0x20;
         writeI2C(PWM_BASE, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 2; reg < 6; reg++){
+        for(uint8_t reg = 2; reg < PWM_REG_BASE; reg++){
             writeI2C(PWM_BASE, reg, &data, 1);
         }
-        for(uint8_t reg = 0x6; reg < 0x46; reg++){
+        for(uint8_t reg = PWM_REG_BASE; reg < 0x46; reg++){
             if((reg-1) % 4 == 0){
                 data = 0x10;
             } else {
@@ -85,10 +97,10 @@ void initPWM(unsigned int* board, unsigned int* freq){
         data = 0x20;
         writeI2C(PWM_BASE+1, 0, &data, 1);
         data = 0x00;
-        for(uint8_t reg = 2; reg < 6; reg++){
+        for(uint8_t reg = 2; reg < PWM_REG_BASE; reg++){
             writeI2C(PWM_BASE+1, reg, &data, 1);
         }
-        for(uint8_t reg = 0x06; reg < 0x46; reg++){
+        for(uint8_t reg = PWM_REG_BASE; reg < 0x46; reg++){
             if((reg-1) % 4 == 0){
                 data = 0x10;
             } else {
@@ -96,6 +108,16 @@ void initPWM(unsigned int* board, unsigned int* freq){
             }
             writeI2C(PWM_BASE+1, reg, &data, 1);
         }
+    }
+}
+
+void closePWM(unsigned int* board){
+    uint8_t data = 0x30;
+    if(board[0]){
+        writeI2C(PWM_BASE, 0x00, &data, 1);
+    }
+    if(board[1]){
+        writeI2C(PWM_BASE+1, 0x00, &data, 1);
     }
 }
 
@@ -118,12 +140,19 @@ void disablePWM(unsigned int board){
 void setPower(uint8_t* data, unsigned int power){
     switch(power){
         case FULL_ON:
-            data[3] = 0;
+            data[0] = 0x00;
+            data[1] = 0x10;
+            data[2] = 0x00;
+            data[3] = 0x00;
             break;
         case FULL_OFF:
-            data[1] = 0;
+            data[0] = 0x00;
+            data[1] = 0x00;
+            data[2] = 0x00;
+            data[3] = 0x10;
             break;
         default:
+            data[0] = 0x00;
             data[1] = 0x00;
             data[2] = (power & 0x00FF);
             data[3] = (power & 0x0F00) >> 8;
@@ -131,41 +160,41 @@ void setPower(uint8_t* data, unsigned int power){
     }
 }
 
-void setServo(unsigned int group, unsigned int line, unsigned int power){
+void setServo(unsigned int group, unsigned int line, unsigned int power, unsigned int update){
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
-    uint8_t reg = 6 + localGroup*16 + line*4;
-    uint8_t data[4] = {0x00, 0x10, 0x00, 0x10};
-    setPower(data, power);
-    writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+    uint8_t reg = PWM_REG_BASE + localGroup*16 + line*4;
+    setPower(&(pwm_buffer[board][reg]), power);
+    if(update == UPDATE_IMMEDIATE){
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 4);
+    }
 }
 
-void setBrushed(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2){
+void setBrushed(unsigned int group, unsigned int channel, unsigned int power1, unsigned int power2, unsigned int update){
+
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
-    uint8_t reg = 6 + localGroup*16 + channel*8;
-    uint8_t data[8] = {0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10};
-    setPower(data, power1);
-    setPower(data+4, power2);
-    writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+    uint8_t reg = PWM_REG_BASE + localGroup*16 + channel*8;
+    setPower(&(pwm_buffer[board][reg]), power1);
+    setPower(&(pwm_buffer[board][reg+4]), power2);
+    if(update == UPDATE_IMMEDIATE){
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 8);
+    }
+
 }
 
-void setBridged(unsigned int group, unsigned int power1, unsigned int power2){
+void setBridged(unsigned int group, unsigned int power1, unsigned int power2, unsigned int update){
 
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
-    uint8_t reg = 6 + localGroup*16;
-    uint8_t data[16] = {
-                        0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10,
-                        0x00, 0x10, 0x00, 0x10,
-                       };
-    setPower(data, power1);
-    setPower(data+4, power2);
-    setPower(data+8, power1);
-    setPower(data+12, power2);
-    writeI2C(PWM_BASE+board, reg, data, sizeof(data));
+    uint8_t reg = PWM_REG_BASE + localGroup*16;
+    setPower(&(pwm_buffer[board][reg]), power1);
+    setPower(&(pwm_buffer[board][reg+4]), power2);
+    setPower(&(pwm_buffer[board][reg+8]), power1);
+    setPower(&(pwm_buffer[board][reg+12]), power2);
+    if(update == UPDATE_IMMEDIATE){
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 16);
+    }
 
 }
 
@@ -173,13 +202,15 @@ void setStepper(unsigned int group, const unsigned int* powers){
 
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
-    uint8_t reg = 7 + localGroup*16;
-    uint8_t data;
+    uint8_t reg = PWM_REG_BASE + localGroup*16;
     for(int i = 0; i < 4; i++){
-        data = powers[i];
-        writeI2C(PWM_BASE+board, reg+i*4, &data, 1);
+        setPower(&(pwm_buffer[board][reg+i*4]), powers[i]);
     }
+    writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 16);
+}
 
+void setBoard(unsigned int board){
+    writeI2C(PWM_BASE+board, PWM_REG_BASE, pwm_buffer[board], 64);
 }
 
 unsigned int calculatePrescale(unsigned int freq){
@@ -241,4 +272,3 @@ void print_pwm_registers(unsigned int board){
         }
     }
 }
-
