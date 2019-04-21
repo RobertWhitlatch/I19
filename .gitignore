@@ -8,6 +8,7 @@
 *.lst
 *.iex
 *.bak
+*.scvd
 
 # Prerequisites
 *.d
