@@ -1,4 +1,5 @@
 from MotorLibrary import *
+from time import sleep
 
 depot = MotorDepot(1000, 200)
 
@@ -10,7 +11,9 @@ bridged = depot.get_group(1, 'Bridged')
 bridged_1 = bridged[0]
 bridged_1.set_speed(4096, update=True)
 
-brushed_0, brushed_1 = depot.get_group(7, 'Brushed')
+brushed = depot.get_group(7, 'Brushed')
+brushed_0 = brushed[0]
+brushed_1 = brushed[1]
 brushed_0.set_speed(2048, update=True)
 brushed_1.set_speed(4096, update=True)
 
@@ -30,11 +33,11 @@ while True:
     servo_0.set_position(410)
     servo_1.set_position(410)
     servo_2.set_position(410)
-    stepper_0.move_num_steps(200, 'CW')
     sleep(1)
     servo_0.set_position(2048)
     servo_1.set_position(2048)
     servo_2.set_position(2048)
+    sleep(1)
     stepper_0.move_num_steps(200, 'CW')
     sleep(1)
 
