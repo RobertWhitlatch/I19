@@ -21,6 +21,7 @@ servo_2 = servo[2]
 stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
 
+flag = True
 i = 412
 j = 2048
 while True:
@@ -48,6 +49,7 @@ while True:
     except KeyboardInterrupt:
         depot.close_depot()
         exit()
+
 
 
 
