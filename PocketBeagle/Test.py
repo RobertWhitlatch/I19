@@ -30,12 +30,12 @@ while True:
     servo_0.set_position(410)
     servo_1.set_position(410)
     servo_2.set_position(410)
-    stepper_0.move_num_stepper(200, 'CW')
+    stepper_0.move_num_steps(200, 'CW')
     sleep(3)
     servo_0.set_position(2048)
     servo_1.set_position(2048)
     servo_2.set_position(2048)
-    stepper_0.move_num_stepper(200, 'CW')
+    stepper_0.move_num_steps(200, 'CW')
     sleep(3)
 
 
