@@ -1,7 +1,7 @@
 from MotorLibrary import *
 from time import sleep
 
-depot = MotorDepot(200)
+depot = MotorDepot(200, 200)
 
 bridged = depot.get_group(0, 'Bridged')
 bridged_0 = bridged[0]
@@ -21,21 +21,18 @@ servo_3.set_position(1230)
 
 stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
+stepper_0.spin_standard('CW')
 
 while True:
     try:
         servo_0.set_position(500)
         servo_1.set_position(500)
         servo_2.set_position(500)
-        sleep(1)
-        stepper_0.move_num_steps(200, 'CW')
-        sleep(1)
+        sleep(2)
         servo_0.set_position(2000)
         servo_1.set_position(2000)
         servo_2.set_position(2000)
-        sleep(1)
-        stepper_0.move_num_steps(200, 'CW')
-        sleep(1)
+        sleep(2)
     except KeyboardInterrupt:
         depot.close_depot()
         exit()
