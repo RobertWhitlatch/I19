@@ -5,12 +5,12 @@ depot = MotorDepot(1000, 200)
 
 bridged = depot.get_group(0, 'Bridged')
 bridged_0 = bridged[0]
-bridged_0.set_speed(2048, update=True)
+bridged_0.set_speed(4096, update=True)
 
 brushed = depot.get_group(1, 'Brushed')
 brushed_0 = brushed[0]
 brushed_1 = brushed[1]
-brushed_0.set_speed(4096, update=True)
+brushed_0.set_speed(2048, update=True)
 brushed_1.set_speed(4096, update=True)
 
 servo = depot.get_group(2, 'Servo')
