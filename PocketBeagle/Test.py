@@ -16,23 +16,13 @@ stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
 while True:
     servo_0.set_position(410)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
     servo_1.set_position(410)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
     servo_2.set_position(410)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
+    sleep(3)
     servo_0.set_position(2048)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
     servo_1.set_position(2048)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
     servo_2.set_position(2048)
-    stepper_0.move_num_steps(20, 'CW')
-    sleep(1.0)
+    sleep(3)
 
 
 
