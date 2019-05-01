@@ -25,9 +25,11 @@ j = 2000
 while True:
     try:
         servo_1.set_position(i)
-        sleep(3)
+        sleep(1)
+        stepper_0.move_num_steps(200, 'CW')
+        sleep(1)
         servo_1.set_position(j)
-        sleep(3)
+        sleep(1)
         stepper_0.move_num_steps(200, 'CW')
         sleep(1)
     except KeyboardInterrupt:
