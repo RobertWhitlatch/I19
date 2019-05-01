@@ -14,9 +14,7 @@ brushed_0.set_speed(2048, update=True)
 brushed_1.set_speed(4096, update=True)
 
 servo = depot.get_group(2, 'Servo')
-servo_0 = servo[0]
 servo_1 = servo[1]
-servo_2 = servo[2]
 
 stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
@@ -26,13 +24,9 @@ i = 412
 j = 2048
 while True:
     try:
-        servo_0.set_position(i)
         servo_1.set_position(i)
-        servo_2.set_position(i)
         sleep(3)
-        servo_0.set_position(j)
         servo_1.set_position(j)
-        servo_2.set_position(j)
         sleep(3)
         stepper_0.move_num_steps(200, 'CW')
         sleep(1)
