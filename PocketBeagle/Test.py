@@ -20,8 +20,8 @@ stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
 
 flag = True
-i = 412
-j = 2048
+i = 500
+j = 2000
 while True:
     try:
         servo_1.set_position(i)
