@@ -32,6 +32,7 @@ extern uint8_t polarityFlag;
 extern uint8_t rightMessage;
 extern uint8_t leftMessage;
 extern uint8_t messageFlag;
+extern uint16_t translationTable[32];
 
 // Environmental Definitions
 #define UART_FIFO_SIZE 256

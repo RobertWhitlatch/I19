@@ -164,9 +164,10 @@ void setServo(unsigned int group, unsigned int line, unsigned int power, unsigne
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = PWM_REG_BASE + localGroup*16 + line*4;
-    setPower(&(pwm_buffer[board][reg]), power);
+    uint8_t index = localGroup*16 + line*4;
+    setPower(&(pwm_buffer[board][index]), power);
     if(update == UPDATE_IMMEDIATE){
-        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 4);
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][index]), 4);
     }
 }
 
@@ -175,10 +176,11 @@ void setBrushed(unsigned int group, unsigned int channel, unsigned int power1, u
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = PWM_REG_BASE + localGroup*16 + channel*8;
-    setPower(&(pwm_buffer[board][reg]), power1);
-    setPower(&(pwm_buffer[board][reg+4]), power2);
+    uint8_t index = localGroup*16 + channel*8;
+    setPower(&(pwm_buffer[board][index]), power1);
+    setPower(&(pwm_buffer[board][index+4]), power2);
     if(update == UPDATE_IMMEDIATE){
-        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 8);
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][index]), 8);
     }
 
 }
@@ -188,12 +190,13 @@ void setBridged(unsigned int group, unsigned int power1, unsigned int power2, un
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = PWM_REG_BASE + localGroup*16;
-    setPower(&(pwm_buffer[board][reg]), power1);
-    setPower(&(pwm_buffer[board][reg+4]), power2);
-    setPower(&(pwm_buffer[board][reg+8]), power1);
-    setPower(&(pwm_buffer[board][reg+12]), power2);
+    uint8_t index = localGroup*16;
+    setPower(&(pwm_buffer[board][index]), power1);
+    setPower(&(pwm_buffer[board][index+4]), power2);
+    setPower(&(pwm_buffer[board][index+8]), power1);
+    setPower(&(pwm_buffer[board][index+12]), power2);
     if(update == UPDATE_IMMEDIATE){
-        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 16);
+        writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][index]), 16);
     }
 
 }
@@ -203,10 +206,11 @@ void setStepper(unsigned int group, const unsigned int* powers){
     uint8_t localGroup = group % 4;
     uint8_t board = group/4;
     uint8_t reg = PWM_REG_BASE + localGroup*16;
+    uint8_t index = localGroup*16;
     for(int i = 0; i < 4; i++){
-        setPower(&(pwm_buffer[board][reg+i*4]), powers[i]);
+        setPower(&(pwm_buffer[board][index+i*4]), powers[i]);
     }
-    writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][reg]), 16);
+    writeI2C(PWM_BASE+board, reg, &(pwm_buffer[board][index]), 16);
 }
 
 void setBoard(unsigned int board){

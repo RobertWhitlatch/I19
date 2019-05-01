@@ -25,9 +25,6 @@ void RemoteMain(void){
             xBee_OutCmd(leftMessage, rightMessage);
             // fprintf(uart, "Left: %2X\tRight: %2X\n", leftMessage, rightMessage);
         }
-        // LED = colorIndex << 1;
-        // colorIndex = (colorIndex + 1) & 0x07;
-        // for(int i = 0; i < 1000000; i++);
     }
 
 }

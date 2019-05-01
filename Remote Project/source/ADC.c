@@ -80,18 +80,25 @@ uint32_t medianFilter1(uint32_t input){
     }
 }
 
+uint8_t fetchTableValue(uint32_t speed){
+    speed /= 36;
+    speed++;
+    uint8_t index = (speed + 1) & 0x1F;
+    return(index);
+}
+
 void ADC0Seq3_Handler(void){
 
     ADC0_ISC_R |= 0x02;
     uint32_t speed = medianFilter0(ADC0_SSFIFO3_R);
     leftMessage = LEFT;
-    if(speed >= 2304){
-        speed = (speed - 2048) >> 5;
-        SPEED_SET(speed,leftMessage);
+    if(speed >= 2236){
+        speed = (speed - 2236);
+        SPEED_SET(fetchTableValue(speed),leftMessage);
         SIGN_SET(PLUS,leftMessage);
-    }else if(speed <= 1792){
-        speed = (2048 - speed) >> 5;
-        SPEED_SET(speed,leftMessage);
+    }else if(speed <= 1859){
+        speed = (1859 - speed);
+        SPEED_SET(fetchTableValue(speed),leftMessage);
         SIGN_SET(MINUS,leftMessage);
     }else{
         SPEED_SET(0,leftMessage);
@@ -106,13 +113,13 @@ void ADC1Seq3_Handler(void){
     ADC1_ISC_R |= 0x04;
     uint32_t speed = medianFilter1(ADC1_SSFIFO3_R);
     rightMessage = RIGHT;
-    if(speed >= 2304){
-        speed = (speed - 2048) >> 5;
-        SPEED_SET(speed,rightMessage);
+    if(speed >= 2236){
+        speed = (speed - 2236);
+        SPEED_SET(fetchTableValue(speed),rightMessage);
         SIGN_SET(PLUS,rightMessage);
-    }else if(speed <= 1792){
-        speed = (2048 - speed) >> 5;
-        SPEED_SET(speed,rightMessage);
+    }else if(speed <= 1859){
+        speed = (1859 - speed);
+        SPEED_SET(fetchTableValue(speed),rightMessage);
         SIGN_SET(MINUS,rightMessage);
     }else{
         SPEED_SET(0,rightMessage);
