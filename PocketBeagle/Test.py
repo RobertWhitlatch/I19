@@ -30,16 +30,20 @@ stepper = depot.get_group(3, 'Stepper')
 stepper_0 = stepper[0]
 
 while True:
-    servo_0.set_position(410)
-    servo_1.set_position(410)
-    servo_2.set_position(410)
-    sleep(1)
-    servo_0.set_position(2048)
-    servo_1.set_position(2048)
-    servo_2.set_position(2048)
-    sleep(1)
-    stepper_0.move_num_steps(200, 'CW')
-    sleep(1)
+    try:
+        servo_0.set_position(410)
+        servo_1.set_position(410)
+        servo_2.set_position(410)
+        sleep(1)
+        servo_0.set_position(2048)
+        servo_1.set_position(2048)
+        servo_2.set_position(2048)
+        sleep(1)
+        stepper_0.move_num_steps(200, 'CW')
+        sleep(1)
+    except KeyboardInterrupt:
+        depot.close_depot()
+        exit()
 
 
 
