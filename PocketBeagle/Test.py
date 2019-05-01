@@ -29,23 +29,13 @@ while True:
         servo_0.set_position(i)
         servo_1.set_position(i)
         servo_2.set_position(i)
-        sleep(1)
+        sleep(3)
         servo_0.set_position(j)
         servo_1.set_position(j)
         servo_2.set_position(j)
-        sleep(1)
+        sleep(3)
         stepper_0.move_num_steps(200, 'CW')
         sleep(1)
-        if flag:
-            i = i + 1
-            j = j - 1
-        else:
-            i = i - 1
-            j = j - 1
-        if i == 1230:
-            flag = False
-        if i == 410:
-            flag = True
     except KeyboardInterrupt:
         depot.close_depot()
         exit()
